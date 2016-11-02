@@ -17,6 +17,7 @@ import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubUtils;
+import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -28,6 +29,9 @@ public class Run {
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
+
+	@com.beust.jcommander.Parameter(names = "-f", description = "Filter by URI or literal")
+	private String filter = null;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -47,23 +51,25 @@ public class Run {
 		}
 	}
 
+	private RDFFormat format;
+	private OutputStream out;
+
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
 		for (File inputFile : inputNanopubs) {
 			File outFile = new File(inputFile.getParent(), "op." + inputFile.getName());
-			final OutputStream out;
 			if (inputFile.getName().matches(".*\\.(gz|gzip)")) {
 				out = new GZIPOutputStream(new FileOutputStream(outFile));
 			} else {
 				out = new FileOutputStream(outFile);
 			}
-			final RDFFormat format = new TrustyUriResource(inputFile).getFormat(RDFFormat.TRIG);
+			format = new TrustyUriResource(inputFile).getFormat(RDFFormat.TRIG);
 			MultiNanopubRdfHandler.process(format, inputFile, new NanopubHandler() {
 
 				@Override
 				public void handleNanopub(Nanopub np) {
 					try {
-						NanopubUtils.writeToStream(np, out, format);
+						process(np);
 					} catch (RDFHandlerException ex) {
 						throw new RuntimeException(ex);
 					}
@@ -72,6 +78,32 @@ public class Run {
 			});
 			out.close();
 		}
+	}
+
+	private void process(Nanopub np) throws RDFHandlerException {
+		if (filter != null) {
+			boolean keep = false;
+			for (Statement st : NanopubUtils.getStatements(np)) {
+				if (st.getSubject().stringValue().equals(filter)) {
+					keep = true;
+					break;
+				}
+				if (st.getPredicate().stringValue().equals(filter)) {
+					keep = true;
+					break;
+				}
+				if (st.getObject().stringValue().equals(filter)) {
+					keep = true;
+					break;
+				}
+				if (st.getContext().stringValue().equals(filter)) {
+					keep = true;
+					break;
+				}
+			}
+			if (!keep) return;
+		}
+		NanopubUtils.writeToStream(np, out, format);
 	}
 
 }
