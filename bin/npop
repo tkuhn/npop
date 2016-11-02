@@ -1,0 +1,23 @@
+#!/bin/bash
+
+NPOPJAR=`find /usr/share/java/ -maxdepth 1 -name "npop-*-jar-with-dependencies.jar" | sort -n | tail -1`
+
+if [ ! -z "$NPOPJAR" ]; then
+  exec java -jar $NPOPJAR "$@"
+fi
+
+WORKINGDIR=`pwd`
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+cd -P ..
+PROJECTDIR=`pwd`
+# for Cygwin:
+PROJECTDIR=${PROJECTDIR#/cygdrive/?}
+cd $WORKINGDIR
+
+NPOPJAR=`find $PROJECTDIR/target/ -maxdepth 1 -name "npop-*-jar-with-dependencies.jar" | sort -n | tail -1`
+
+if [ ! -z "$NPOPJAR" ]; then
+  exec java -jar $NPOPJAR "$@"
+fi
+
+echo "ERROR: npop-*-jar-with-dependencies.jar not found"
