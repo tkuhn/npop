@@ -1,109 +1,81 @@
 package org.petapico.npop;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.zip.GZIPOutputStream;
+import java.util.Map;
 
-import net.trustyuri.TrustyUriException;
-import net.trustyuri.TrustyUriResource;
-
-import org.nanopub.MalformedNanopubException;
-import org.nanopub.MultiNanopubRdfHandler;
-import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
-import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.nanopub.NanopubUtils;
-import org.openrdf.model.Statement;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
+import org.openrdf.OpenRDFException;
 
 public class Run {
 
-	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
-	private List<File> inputNanopubs = new ArrayList<File>();
+	private Run() {}  // no instances allowed
 
-	@com.beust.jcommander.Parameter(names = "-f", description = "Filter by URI or literal")
-	private String filter = null;
-
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, OpenRDFException {
 		NanopubImpl.ensureLoaded();
-		Run obj = new Run();
-		JCommander jc = new JCommander(obj);
-		try {
-			jc.parse(args);
-		} catch (ParameterException ex) {
-			jc.usage();
-			System.exit(1);
-		}
-		try {
-			obj.run();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.exit(1);
+		run(args);
+	}
+
+	private static List<Class<?>> runnableClasses = new ArrayList<>();
+	private static Map<String,Class<?>> runnableClassesByName = new HashMap<>();
+	private static Map<String,Class<?>> runnableClassesByShortcut = new HashMap<>();
+	private static Map<Class<?>,String> runnableClassNames = new HashMap<>();
+	private static Map<Class<?>,String> runnableClassShortcuts = new HashMap<>();
+
+	private static void addRunnableClass(Class<?> c, String shortcut) {
+		runnableClasses.add(c);
+		runnableClassesByName.put(c.getSimpleName(), c);
+		runnableClassNames.put(c, c.getSimpleName());
+		if (shortcut != null) {
+			runnableClassesByShortcut.put(shortcut, c);
+			runnableClassShortcuts.put(c, shortcut);
 		}
 	}
 
-	private RDFFormat format;
-	private OutputStream out;
-
-	private void run() throws IOException, RDFParseException, RDFHandlerException,
-			MalformedNanopubException, TrustyUriException {
-		for (File inputFile : inputNanopubs) {
-			File outFile = new File(inputFile.getParent(), "op." + inputFile.getName());
-			if (inputFile.getName().matches(".*\\.(gz|gzip)")) {
-				out = new GZIPOutputStream(new FileOutputStream(outFile));
-			} else {
-				out = new FileOutputStream(outFile);
-			}
-			format = new TrustyUriResource(inputFile).getFormat(RDFFormat.TRIG);
-			MultiNanopubRdfHandler.process(format, inputFile, new NanopubHandler() {
-
-				@Override
-				public void handleNanopub(Nanopub np) {
-					try {
-						process(np);
-					} catch (RDFHandlerException ex) {
-						throw new RuntimeException(ex);
-					}
-				}
-
-			});
-			out.close();
-		}
+	static {
+		addRunnableClass(Filter.class, "filter");
 	}
 
-	private void process(Nanopub np) throws RDFHandlerException {
-		if (filter != null) {
-			boolean keep = false;
-			for (Statement st : NanopubUtils.getStatements(np)) {
-				if (st.getSubject().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getPredicate().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getObject().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getContext().stringValue().equals(filter)) {
-					keep = true;
-					break;
+	public static void run(String[] command) throws IOException, OpenRDFException {
+		if (command.length == 0) {
+			System.err.println("ERROR: missing command");
+			System.err.println("Run 'np help' to show all available commands.");
+			System.exit(1);
+		}
+		String cmd = command[0];
+		String[] cmdArgs = Arrays.copyOfRange(command, 1, command.length);
+		Class<?> runClass = runnableClassesByName.get(cmd);
+		if (runClass == null) {
+			runClass = runnableClassesByShortcut.get(cmd);
+		}
+		if (runClass != null) {
+			try {
+				runClass.getMethod("main", String[].class).invoke(runClass, (Object) cmdArgs);
+			} catch (Exception ex) {
+				System.err.println("Internal error: " + ex.getMessage());
+				ex.printStackTrace(System.err);
+				System.exit(1);
+			}
+		} else if (cmd.equals("help")) {
+			System.err.println("Available commands:");
+			for (Class<?> c : runnableClasses) {
+				String s = runnableClassShortcuts.get(c);
+				String n = runnableClassNames.get(c);
+				if (s == null) {
+					System.err.println("- " + n);
+				} else {
+					System.err.println("- " + s + " / " + n);
 				}
 			}
-			if (!keep) return;
+			System.exit(0);
+		} else {
+			System.err.println("ERROR. Unrecognized command: " + cmd);
+			System.err.println("Run 'np help' to show all available commands.");
+			System.exit(1);
 		}
-		NanopubUtils.writeToStream(np, out, format);
 	}
 
 }
