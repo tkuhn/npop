@@ -38,6 +38,7 @@ public class Run {
 	static {
 		addRunnableClass(Filter.class, "filter");
 		addRunnableClass(Extract.class, "extract");
+		addRunnableClass(Gml.class, "gml");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
