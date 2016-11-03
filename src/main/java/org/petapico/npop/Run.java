@@ -9,6 +9,10 @@ import java.util.Map;
 
 import org.nanopub.NanopubImpl;
 import org.openrdf.OpenRDFException;
+import org.openrdf.rio.RDFParserRegistry;
+import org.openrdf.rio.RDFWriterRegistry;
+import org.openrdf.rio.turtle.TurtleParserFactory;
+import org.openrdf.rio.turtle.TurtleWriterFactory;
 
 public class Run {
 
@@ -16,6 +20,11 @@ public class Run {
 
 	public static void main(String[] args) throws IOException, OpenRDFException {
 		NanopubImpl.ensureLoaded();
+		
+		// Not sure why this isnt' done automatically...:
+		RDFParserRegistry.getInstance().add(new TurtleParserFactory());
+		RDFWriterRegistry.getInstance().add(new TurtleWriterFactory());
+
 		run(args);
 	}
 
