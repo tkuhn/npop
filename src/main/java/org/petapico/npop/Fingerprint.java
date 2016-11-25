@@ -7,20 +7,25 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
+import net.trustyuri.TrustyUriUtils;
+import net.trustyuri.rdf.RdfHasher;
+import net.trustyuri.rdf.RdfPreprocessor;
 
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
+import org.nanopub.NanopubUtils;
+import org.nanopub.SimpleTimestampPattern;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -29,7 +34,7 @@ import org.openrdf.rio.Rio;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
-public class Gml {
+public class Fingerprint {
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
@@ -40,9 +45,12 @@ public class Gml {
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
+	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
+	private boolean outputNanopubUri = false;
+
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
-		Gml obj = new Gml();
+		Fingerprint obj = new Fingerprint();
 		JCommander jc = new JCommander(obj);
 		try {
 			jc.parse(args);
@@ -58,11 +66,11 @@ public class Gml {
 		}
 	}
 
+	private static final String placeholderUriPrefix = "http://petapico.org/npop/placeholder/";
+
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
-	private Map<String,Integer> nodes = new HashMap<>();
 	private BufferedWriter writer;
-	private int nodeCounter = 0;
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
@@ -81,7 +89,6 @@ public class Gml {
 			}
 
 			writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-			writer.write("graph [\n");
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
 
@@ -89,6 +96,7 @@ public class Gml {
 				public void handleNanopub(Nanopub np) {
 					try {
 						process(np);
+						writer.write("xxx\n");
 					} catch (RDFHandlerException ex) {
 						throw new RuntimeException(ex);
 					} catch (IOException ex) {
@@ -98,8 +106,6 @@ public class Gml {
 
 			});
 
-			writer.write("]\n");
-
 			writer.flush();
 			if (outputStream != System.out) {
 				writer.close();
@@ -108,38 +114,42 @@ public class Gml {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		for (Statement st : np.getAssertion()) {
-			if (!(st.getObject() instanceof URI)) continue;
-			String s = st.getSubject().stringValue();
-			String p = st.getPredicate().stringValue();
-			String o = st.getObject().stringValue();
-			int si, oi;
-			if (nodes.containsKey(s)) {
-				si = nodes.get(s);
-			} else {
-				si = nodeCounter++;
-				nodes.put(s, si);
-				writer.write("node [\n");
-				writer.write("id N" + si + "N\n");
-				writer.write("label \"" + s + "\"\n");
-				writer.write("]\n");
-			}
-			if (nodes.containsKey(o)) {
-				oi = nodes.get(o);
-			} else {
-				oi = nodeCounter++;
-				nodes.put(o, oi);
-				writer.write("node [\n");
-				writer.write("id N" + oi + "N\n");
-				writer.write("label \"" + o + "\"\n");
-				writer.write("]\n");
-			}
-			writer.write("edge [\n");
-			writer.write("source N" + si + "N\n");
-			writer.write("target N" + oi + "N\n");
-			writer.write("label \"" + p + "\"\n");
-			writer.write("]\n");
+		if (outputNanopubUri) {
+			writer.write(np.getUri() + " ");
 		}
+		writer.write(getFingerprint(np) + "\n");
+	}
+
+	public static String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
+		String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
+		if (artifactCode == null) {
+			throw new RuntimeException("Not a trusty URI: " + np.getUri());
+		}
+		List<Statement> statements = getNormalizedStatements(np);
+		statements = RdfPreprocessor.run(statements, artifactCode);
+		String fingerprint = RdfHasher.makeArtifactCode(statements);
+		return fingerprint.substring(2);
+	}
+
+	private static List<Statement> getNormalizedStatements(Nanopub np) {
+		List<Statement> statements = NanopubUtils.getStatements(np);
+		List<Statement> n = new ArrayList<>();
+		for (Statement st : statements) {
+			if (st.getContext().equals(np.getPubinfoUri()) &&
+					st.getSubject().equals(np.getUri()) &&
+					SimpleTimestampPattern.isCreationTimeProperty(st.getPredicate())) {
+				Statement normalizedStatement =
+					new ContextStatementImpl(st.getSubject(), st.getPredicate(), placeholder("timestamp"), st.getContext());
+				n.add(normalizedStatement);
+			} else {
+				n.add(st);
+			}
+		}
+		return n;
+	}
+
+	private static URI placeholder(String name) {
+		return new URIImpl(placeholderUriPrefix + name);
 	}
 
 }

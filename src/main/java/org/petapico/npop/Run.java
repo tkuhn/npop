@@ -48,6 +48,7 @@ public class Run {
 		addRunnableClass(Filter.class, "filter");
 		addRunnableClass(Extract.class, "extract");
 		addRunnableClass(Gml.class, "gml");
+		addRunnableClass(Fingerprint.class, "fingerprint");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {

@@ -119,10 +119,9 @@ public class Extract {
 
 			writer.endRDF();
 
+			outputStream.flush();
 			if (outputStream != System.out) {
 				outputStream.close();
-			} else {
-				outputStream.flush();
 			}
 		}
 	}
