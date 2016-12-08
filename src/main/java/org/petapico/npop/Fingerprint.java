@@ -96,7 +96,6 @@ public class Fingerprint {
 				public void handleNanopub(Nanopub np) {
 					try {
 						process(np);
-						writer.write("xxx\n");
 					} catch (RDFHandlerException ex) {
 						throw new RuntimeException(ex);
 					} catch (IOException ex) {
