@@ -127,7 +127,8 @@ public class Topic {
 			int c = resourceCount.get(r);
 			if (c > max) {
 				topic = r;
-			} else if (c > max) {
+				max = c;
+			} else if (c == max) {
 				topic = null;
 			}
 		}
