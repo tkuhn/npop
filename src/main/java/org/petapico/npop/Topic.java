@@ -106,10 +106,11 @@ public class Topic {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
+		writer.write(getTopic(np) + "");
 		if (outputNanopubUri) {
-			writer.write(np.getUri() + " ");
+			writer.write(" " + np.getUri());
 		}
-		writer.write(getTopic(np) + "\n");
+		writer.write("\n");
 	}
 
 	public static Resource getTopic(Nanopub np) {

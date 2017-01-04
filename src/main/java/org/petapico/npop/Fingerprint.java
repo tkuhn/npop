@@ -113,10 +113,11 @@ public class Fingerprint {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
+		writer.write(getFingerprint(np));
 		if (outputNanopubUri) {
-			writer.write(np.getUri() + " ");
+			writer.write(" " + np.getUri());
 		}
-		writer.write(getFingerprint(np) + "\n");
+		writer.write("\n");
 	}
 
 	public static String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
