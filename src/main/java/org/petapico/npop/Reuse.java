@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,8 +41,11 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-n", description = "Output new nanopubs")
 	private boolean outputNew = false;
 
-	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
+	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -r and/or -n to be set)")
 	private File outputFile;
+
+	@com.beust.jcommander.Parameter(names = "-u", description = "Output text file with URIs (can be used to create an index)")
+	private File uriFile;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
@@ -72,6 +76,7 @@ public class Reuse {
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
+	private PrintStream uriStream = null;
 	private Map<String,Nanopub> reusableNanopubs = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount;
 
@@ -108,6 +113,9 @@ public class Reuse {
 		uniqueReusableCount = reusableNanopubs.size();
 
 		// Reuse matching nanopubs:
+		if (uriFile != null) {
+			uriStream = new PrintStream(uriFile);
+		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
@@ -147,6 +155,10 @@ public class Reuse {
 			if (outputStream != System.out) {
 				outputStream.close();
 			}
+			if (uriStream != null) {
+				uriStream.flush();
+				uriStream.close();
+			}
 
 			System.err.println("Reusable count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
 			System.err.println("Input count: " + inputCount);
@@ -157,15 +169,20 @@ public class Reuse {
 	private void process(Nanopub np) throws IOException, RDFHandlerException {
 		inputCount++;
 		String fingerprint = Fingerprint.getFingerprint(np);
+		Nanopub outNp = np;
 		if (reusableNanopubs.containsKey(fingerprint)) {
 			reuseCount++;
+			outNp = reusableNanopubs.get(fingerprint);
 			if (outputReused) {
-				output(reusableNanopubs.get(fingerprint));
+				output(outNp);
 			}
 		} else {
 			if (outputNew) {
-				output(np);
+				output(outNp);
 			}
+		}
+		if (uriStream != null) {
+			uriStream.println(outNp.getUri());
 		}
 	}
 
