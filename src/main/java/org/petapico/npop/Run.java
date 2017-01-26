@@ -50,6 +50,7 @@ public class Run {
 		addRunnableClass(Gml.class, "gml");
 		addRunnableClass(Fingerprint.class, "fingerprint");
 		addRunnableClass(Topic.class, "topic");
+		addRunnableClass(Reuse.class, "reuse");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
