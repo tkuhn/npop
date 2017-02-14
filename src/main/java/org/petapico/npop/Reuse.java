@@ -1,7 +1,9 @@
 package org.petapico.npop;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -35,16 +37,14 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-x", description = "Nanopubs to be reused", required = true)
 	private File reuseNanopubFile;
 
-	@com.beust.jcommander.Parameter(names = "-r", description = "Output reused nanopubs")
-	private boolean outputReused = false;
-
 	@com.beust.jcommander.Parameter(names = "-n", description = "Output new nanopubs")
 	private boolean outputNew = false;
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -r and/or -n to be set)")
 	private File outputFile;
 
-	@com.beust.jcommander.Parameter(names = "-u", description = "Output text file with URIs (can be used to create an index)")
+	@com.beust.jcommander.Parameter(names = "-u", description = "Output text file with URIs and fingerprints (can afterwards be used as "+
+			"a reuse file for argument -x or to create an index)")
 	private File uriFile;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
@@ -77,7 +77,7 @@ public class Reuse {
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
 	private PrintStream uriStream = null;
-	private Map<String,Nanopub> reusableNanopubs = new HashMap<>();
+	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount;
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
@@ -89,27 +89,46 @@ public class Reuse {
 		reuseCount = 0;
 
 		// Loading nanopubs to be reused:
-		if (reuseFormat != null) {
-			rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
-		} else {
-			rdfReuseFormat = Rio.getParserFormatForFileName(reuseNanopubFile.toString());
-		}
-		MultiNanopubRdfHandler.process(rdfReuseFormat, reuseNanopubFile, new NanopubHandler() {
-
-			@Override
-			public void handleNanopub(Nanopub np) {
-				try {
-					String fingerprint = Fingerprint.getFingerprint(np);
-					reusableNanopubs.put(fingerprint, np);
+		if (reuseNanopubFile.getName().endsWith(".txt")) {
+			BufferedReader br = null;
+			try {
+				br = new BufferedReader(new FileReader(reuseNanopubFile));
+			    String line;
+			    while ((line = br.readLine()) != null) {
+			    	line = line.trim();
+			    	if (line.isEmpty()) continue;
+			    	String[] columns = line.split(" ");
+			    	String uri = columns[0];
+			    	String fingerprint = columns[1];
+			    	reusableNanopubs.put(fingerprint, uri);
 					reusableCount++;
-				} catch (IOException ex) {
-					throw new RuntimeException(ex);
-				} catch (RDFHandlerException ex) {
-					throw new RuntimeException(ex);
-				}
+			    }
+			} finally {
+				if (br != null) br.close();
 			}
-
-		});
+		} else {
+			if (reuseFormat != null) {
+				rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
+			} else {
+				rdfReuseFormat = Rio.getParserFormatForFileName(reuseNanopubFile.toString());
+			}
+			MultiNanopubRdfHandler.process(rdfReuseFormat, reuseNanopubFile, new NanopubHandler() {
+	
+				@Override
+				public void handleNanopub(Nanopub np) {
+					try {
+						String fingerprint = Fingerprint.getFingerprint(np);
+						reusableNanopubs.put(fingerprint, np.getUri().toString());
+						reusableCount++;
+					} catch (IOException ex) {
+						throw new RuntimeException(ex);
+					} catch (RDFHandlerException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+	
+			});
+		}
 		uniqueReusableCount = reusableNanopubs.size();
 
 		// Reuse matching nanopubs:
@@ -169,20 +188,17 @@ public class Reuse {
 	private void process(Nanopub np) throws IOException, RDFHandlerException {
 		inputCount++;
 		String fingerprint = Fingerprint.getFingerprint(np);
-		Nanopub outNp = np;
+		String uri = np.getUri().toString();
 		if (reusableNanopubs.containsKey(fingerprint)) {
 			reuseCount++;
-			outNp = reusableNanopubs.get(fingerprint);
-			if (outputReused) {
-				output(outNp);
-			}
+			uri = reusableNanopubs.get(fingerprint);
 		} else {
 			if (outputNew) {
-				output(outNp);
+				output(np);
 			}
 		}
 		if (uriStream != null) {
-			uriStream.println(outNp.getUri());
+			uriStream.println(uri + " " + fingerprint);
 		}
 	}
 

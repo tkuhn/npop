@@ -45,9 +45,6 @@ public class Fingerprint {
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
-	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
-	private boolean outputNanopubUri = false;
-
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
 		Fingerprint obj = new Fingerprint();
@@ -113,11 +110,7 @@ public class Fingerprint {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(getFingerprint(np));
-		if (outputNanopubUri) {
-			writer.write(" " + np.getUri());
-		}
-		writer.write("\n");
+		writer.write(np.getUri() + " " + getFingerprint(np) + "\n");
 	}
 
 	public static String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
