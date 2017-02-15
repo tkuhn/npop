@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -56,6 +57,9 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "--out-format", description = "Format of the output nanopubs: trig, nq, trix, trig.gz, ...")
 	private String outFormat;
 
+	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options")
+	private String fingerprintingOptions;
+
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
 		Reuse obj = new Reuse();
@@ -79,6 +83,7 @@ public class Reuse {
 	private PrintStream uriStream = null;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount;
+	private Set<String> fpOptions = Fingerprint.parseFingerprintingOptions(fingerprintingOptions);
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
@@ -117,7 +122,7 @@ public class Reuse {
 				@Override
 				public void handleNanopub(Nanopub np) {
 					try {
-						String fingerprint = Fingerprint.getFingerprint(np);
+						String fingerprint = Fingerprint.getFingerprint(np, fpOptions);
 						reusableNanopubs.put(fingerprint, np.getUri().toString());
 						reusableCount++;
 					} catch (IOException ex) {
@@ -187,7 +192,7 @@ public class Reuse {
 
 	private void process(Nanopub np) throws IOException, RDFHandlerException {
 		inputCount++;
-		String fingerprint = Fingerprint.getFingerprint(np);
+		String fingerprint = Fingerprint.getFingerprint(np, fpOptions);
 		String uri = np.getUri().toString();
 		if (reusableNanopubs.containsKey(fingerprint)) {
 			reuseCount++;

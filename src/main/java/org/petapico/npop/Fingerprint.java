@@ -1,5 +1,7 @@
 package org.petapico.npop;
 
+import static org.nanopub.SimpleTimestampPattern.isCreationTimeProperty;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -7,7 +9,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -21,11 +25,9 @@ import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubUtils;
-import org.nanopub.SimpleTimestampPattern;
+import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -41,6 +43,10 @@ public class Fingerprint {
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
+
+	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options, as a string with blank spaces as separators " +
+			"(e.g. -x 'option1 option2')")
+	private String fingerprintingOptions;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
@@ -63,14 +69,15 @@ public class Fingerprint {
 		}
 	}
 
-	private static final String placeholderUriPrefix = "http://petapico.org/npop/placeholder/";
-
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
+	private Set<String> options = new HashSet<>();
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
+		options = parseFingerprintingOptions(fingerprintingOptions);
+
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
@@ -110,39 +117,58 @@ public class Fingerprint {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(np.getUri() + " " + getFingerprint(np) + "\n");
+		writer.write(np.getUri() + " " + getFingerprint(np, options) + "\n");
 	}
 
-	public static String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
+	public static String getFingerprint(Nanopub np, Set<String> options) throws RDFHandlerException, IOException {
+		if (options == null) options = new HashSet<>();
 		String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
 		if (artifactCode == null) {
 			throw new RuntimeException("Not a trusty URI: " + np.getUri());
 		}
-		List<Statement> statements = getNormalizedStatements(np);
+		List<Statement> statements = getNormalizedStatements(np, options);
 		statements = RdfPreprocessor.run(statements, artifactCode);
 		String fingerprint = RdfHasher.makeArtifactCode(statements);
 		return fingerprint.substring(2);
 	}
 
-	private static List<Statement> getNormalizedStatements(Nanopub np) {
+	private static List<Statement> getNormalizedStatements(Nanopub np, Set<String> options) {
 		List<Statement> statements = NanopubUtils.getStatements(np);
 		List<Statement> n = new ArrayList<>();
 		for (Statement st : statements) {
-			if (st.getContext().equals(np.getPubinfoUri()) &&
-					st.getSubject().equals(np.getUri()) &&
-					SimpleTimestampPattern.isCreationTimeProperty(st.getPredicate())) {
-				Statement normalizedStatement =
-					new ContextStatementImpl(st.getSubject(), st.getPredicate(), placeholder("timestamp"), st.getContext());
-				n.add(normalizedStatement);
-			} else {
-				n.add(st);
+			boolean isInProv = st.getContext().equals(np.getProvenanceUri());
+			if (isInProv && options.contains("ignore-prov")) {
+				continue;
 			}
+			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
+			if (isInPubInfo && options.contains("ignore-pubinfo")) {
+				continue;
+			}
+			Resource subj = st.getSubject();
+			URI pred = st.getPredicate();
+//			if (isInPubInfo && options.contains("ignore-version") && 
+//					(pred.toString().equals("http://purl.org/pav/2.0/version") || pred.toString().equals("http://purl.org/pav/version"))) {
+//				continue;
+//			}
+//			if (isInProv && options.contains("ignore-imported-on") && 
+//					(pred.toString().equals("http://purl.org/pav/2.0/importedOn") || pred.toString().equals("http://purl.org/pav/importedOn"))) {
+//				continue;
+//			}
+			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
+				continue;
+			}
+			n.add(st);
 		}
 		return n;
 	}
 
-	private static URI placeholder(String name) {
-		return new URIImpl(placeholderUriPrefix + name);
+	public static Set<String> parseFingerprintingOptions(String optionString) {
+		Set<String> options = new HashSet<>();
+		if (optionString == null) return options;
+		for (String s : optionString.trim().split(" ")) {
+			options.add(s);
+		}
+		return options;
 	}
 
 }
