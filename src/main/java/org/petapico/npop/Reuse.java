@@ -184,8 +184,8 @@ public class Reuse {
 				uriStream.close();
 			}
 
-			System.err.println("Reusable count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
-			System.err.println("Input count: " + inputCount);
+			System.err.println("Older dataset count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
+			System.err.println("Newer dataset count: " + inputCount);
 			System.err.println("Reuse count: " + reuseCount);
 		}
 	}
