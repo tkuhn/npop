@@ -37,6 +37,9 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
 
+	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs (separated by blanks) to ignore")
+	private String ignoreProperties;
+
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
@@ -64,9 +67,15 @@ public class Topic {
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
+	private Map<String,Boolean> ignore = new HashMap<>();
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
+		if (ignoreProperties != null) {
+			for (String s : ignoreProperties.trim().split(" ")) {
+				if (!s.isEmpty()) ignore.put(s, true);
+			}
+		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
@@ -106,18 +115,19 @@ public class Topic {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(getTopic(np) + "");
+		writer.write(getTopic(np, ignore) + "");
 		if (outputNanopubUri) {
 			writer.write(" " + np.getUri());
 		}
 		writer.write("\n");
 	}
 
-	public static Resource getTopic(Nanopub np) {
+	public static Resource getTopic(Nanopub np, Map<String,Boolean> ignore) {
 		Map<Resource,Integer> resourceCount = new HashMap<>();
 		for (Statement st : np.getAssertion()) {
 			Resource subj = st.getSubject();
 			if (subj.equals(np.getUri())) continue;
+			if (ignore.containsKey(st.getPredicate().stringValue())) continue;
 			if (!resourceCount.containsKey(subj)) resourceCount.put(subj, 0);
 			resourceCount.put(subj, resourceCount.get(subj) + 1);
 		}
