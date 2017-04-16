@@ -28,6 +28,8 @@ import org.nanopub.NanopubUtils;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -45,7 +47,7 @@ public class Fingerprint {
 	private File outputFile;
 
 	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options, as a string with blank spaces as separators " +
-			"(e.g. -x 'option1 option2')")
+			"(e.g. -f 'option1 option2')")
 	private String fingerprintingOptions;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
@@ -145,6 +147,12 @@ public class Fingerprint {
 				continue;
 			}
 			Resource subj = st.getSubject();
+			if (options.contains("test-disgenet") && (
+					subj.stringValue().startsWith("http://rdf.disgenet.org/resource/gda/DGN") ||
+					subj.stringValue().startsWith("http://rdf.disgenet.org/gene-disease-association.ttl#DGN"))) {
+				subj = new URIImpl("http://rdf.disgenet.org/resource/gda/DGN");
+				st = new ContextStatementImpl(subj, st.getPredicate(), st.getObject(), st.getContext());			
+			}
 			URI pred = st.getPredicate();
 //			if (isInPubInfo && options.contains("ignore-version") && 
 //					(pred.toString().equals("http://purl.org/pav/2.0/version") || pred.toString().equals("http://purl.org/pav/version"))) {
