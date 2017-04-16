@@ -46,6 +46,9 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
 	private boolean outputNanopubUri = false;
 
+	@com.beust.jcommander.Parameter(names = "-d", description = "Topic detector class")
+	private String detectorClass;
+
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
 		Topic obj = new Topic();
@@ -102,6 +105,8 @@ public class Topic {
 						throw new RuntimeException(ex);
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
+					} catch (ReflectiveOperationException ex) {
+						throw new RuntimeException(ex);
 					}
 				}
 
@@ -114,15 +119,26 @@ public class Topic {
 		}
 	}
 
-	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(getTopic(np, ignore) + "");
+	private void process(Nanopub np) throws RDFHandlerException, IOException, ReflectiveOperationException {
+		String topic;
+		if (detectorClass != null && !detectorClass.isEmpty()) {
+			String detectorClassName = detectorClass;
+			if (!detectorClass.contains(".")) {
+				detectorClassName = "org.petapico.npop.topic." + detectorClass;
+			}
+			TopicDetector td = (TopicDetector) Class.forName(detectorClassName).newInstance();
+			topic = td.getTopic(np);
+		} else {
+			topic = getTopic(np, ignore);
+		}
+		writer.write(topic);
 		if (outputNanopubUri) {
 			writer.write(" " + np.getUri());
 		}
 		writer.write("\n");
 	}
 
-	public static Resource getTopic(Nanopub np, Map<String,Boolean> ignore) {
+	public static String getTopic(Nanopub np, Map<String,Boolean> ignore) {
 		Map<Resource,Integer> resourceCount = new HashMap<>();
 		for (Statement st : np.getAssertion()) {
 			Resource subj = st.getSubject();
@@ -142,7 +158,14 @@ public class Topic {
 				topic = null;
 			}
 		}
-		return topic;
+		return topic + "";
+	}
+
+
+	public interface TopicDetector {
+
+		public String getTopic(Nanopub np);
+
 	}
 
 }
