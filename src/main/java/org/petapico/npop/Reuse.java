@@ -41,7 +41,7 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-n", description = "Output new nanopubs")
 	private boolean outputNew = false;
 
-	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -r and/or -n to be set)")
+	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -n to be set)")
 	private File outputFile;
 
 	@com.beust.jcommander.Parameter(names = "-u", description = "Output text file with URIs and fingerprints (can afterwards be used as "+
@@ -59,6 +59,9 @@ public class Reuse {
 
 	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options")
 	private String fingerprintingOptions;
+
+	@com.beust.jcommander.Parameter(names = "-s", description = "Add npx:supersedes backlinks for changed nanopublications")
+	private boolean addSupersedesBacklinks = false;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -198,6 +201,10 @@ public class Reuse {
 			reuseCount++;
 			uri = reusableNanopubs.get(fingerprint);
 		} else {
+			if (addSupersedesBacklinks) {
+				throw new RuntimeException("addSupersedesBacklinks is not yet implemented");
+				// TODO
+			}
 			if (outputNew) {
 				output(np);
 			}

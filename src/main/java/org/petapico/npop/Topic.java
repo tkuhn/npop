@@ -37,14 +37,14 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
 
-	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs (separated by blanks) to ignore")
-	private String ignoreProperties;
-
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
 	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
 	private boolean outputNanopubUri = false;
+
+	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs (separated by blanks) to ignore (has no effect if -d is set too)")
+	private String ignoreProperties;
 
 	@com.beust.jcommander.Parameter(names = "-d", description = "Topic detector class")
 	private String detectorClass;
