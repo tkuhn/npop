@@ -12,7 +12,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.vocabulary.RDF;
 import org.petapico.npop.Topic.TopicDetector;
 
-public class Wikipathways implements TopicDetector {
+public class WikipathwaysTopics implements TopicDetector {
 
 	@Override
 	public String getTopic(Nanopub np) {
