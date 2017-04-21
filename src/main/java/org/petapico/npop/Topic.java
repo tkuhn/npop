@@ -43,7 +43,7 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
 	private boolean outputNanopubUri = false;
 
-	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs (separated by blanks) to ignore (has no effect if -d is set too)")
+	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs to ignore, separated by '|' (has no effect if -d is set)")
 	private String ignoreProperties;
 
 	@com.beust.jcommander.Parameter(names = "-d", description = "Topic detector class")
@@ -75,7 +75,7 @@ public class Topic {
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
 		if (ignoreProperties != null) {
-			for (String s : ignoreProperties.trim().split(" ")) {
+			for (String s : ignoreProperties.trim().split("\\|")) {
 				if (!s.isEmpty()) ignore.put(s, true);
 			}
 		}

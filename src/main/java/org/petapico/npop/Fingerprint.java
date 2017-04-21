@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -46,12 +44,23 @@ public class Fingerprint {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
 
-	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options, as a string with blank spaces as separators " +
-			"(e.g. -f 'option1 option2')")
-	private String fingerprintingOptions;
-
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
+
+	@com.beust.jcommander.Parameter(names = "--ignore-head", description = "Ignore the head graph for fingerprint calculation")
+	private boolean ignoreHead;
+
+	@com.beust.jcommander.Parameter(names = "--ignore-assertion", description = "Ignore the assertion graph for fingerprint calculation")
+	private boolean ignoreAssertion;
+
+	@com.beust.jcommander.Parameter(names = "--ignore-prov", description = "Ignore the provenance graph for fingerprint calculation")
+	private boolean ignoreProv;
+
+	@com.beust.jcommander.Parameter(names = "--ignore-pubinfo", description = "Ignore the publication info graph for fingerprint calculation")
+	private boolean ignorePubinfo;
+
+	@com.beust.jcommander.Parameter(names = "--test-disgenet", description = "Just for testing...")
+	private boolean testDisgenet;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -71,15 +80,22 @@ public class Fingerprint {
 		}
 	}
 
+	public static Fingerprint getInstance(String args) throws ParameterException {
+		NanopubImpl.ensureLoaded();
+		if (args == null) args = "";
+		args = args.trim() + " dummy-input-file";
+		Fingerprint obj = new Fingerprint();
+		JCommander jc = new JCommander(obj);
+		jc.parse(args.split(" "));
+		return obj;
+	}
+
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
-	private Set<String> options = new HashSet<>();
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
-		options = parseFingerprintingOptions(fingerprintingOptions);
-
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
@@ -119,35 +135,34 @@ public class Fingerprint {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(np.getUri() + " " + getFingerprint(np, options) + "\n");
+		writer.write(np.getUri() + " " + getFingerprint(np) + "\n");
 	}
 
-	public static String getFingerprint(Nanopub np, Set<String> options) throws RDFHandlerException, IOException {
-		if (options == null) options = new HashSet<>();
+	public String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
 		String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
 		if (artifactCode == null) {
 			throw new RuntimeException("Not a trusty URI: " + np.getUri());
 		}
-		List<Statement> statements = getNormalizedStatements(np, options);
+		List<Statement> statements = getNormalizedStatements(np);
 		statements = RdfPreprocessor.run(statements, artifactCode);
 		String fingerprint = RdfHasher.makeArtifactCode(statements);
 		return fingerprint.substring(2);
 	}
 
-	private static List<Statement> getNormalizedStatements(Nanopub np, Set<String> options) {
+	private List<Statement> getNormalizedStatements(Nanopub np) {
 		List<Statement> statements = NanopubUtils.getStatements(np);
 		List<Statement> n = new ArrayList<>();
 		for (Statement st : statements) {
+			boolean isInHead = st.getContext().equals(np.getHeadUri());
+			if (isInHead && ignoreHead) continue;
+			boolean isInAssertion = st.getContext().equals(np.getAssertionUri());
+			if (isInAssertion && ignoreAssertion) continue;
 			boolean isInProv = st.getContext().equals(np.getProvenanceUri());
-			if (isInProv && options.contains("ignore-prov")) {
-				continue;
-			}
+			if (isInProv && ignoreProv) continue;
 			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
-			if (isInPubInfo && options.contains("ignore-pubinfo")) {
-				continue;
-			}
+			if (isInPubInfo && ignorePubinfo) continue;
 			Resource subj = st.getSubject();
-			if (options.contains("test-disgenet") && (
+			if (testDisgenet && (
 					subj.stringValue().startsWith("http://rdf.disgenet.org/resource/gda/DGN") ||
 					subj.stringValue().startsWith("http://rdf.disgenet.org/gene-disease-association.ttl#DGN"))) {
 				subj = new URIImpl("http://rdf.disgenet.org/resource/gda/DGN");
@@ -168,15 +183,6 @@ public class Fingerprint {
 			n.add(st);
 		}
 		return n;
-	}
-
-	public static Set<String> parseFingerprintingOptions(String optionString) {
-		Set<String> options = new HashSet<>();
-		if (optionString == null) return options;
-		for (String s : optionString.trim().split(" ")) {
-			options.add(s);
-		}
-		return options;
 	}
 
 }

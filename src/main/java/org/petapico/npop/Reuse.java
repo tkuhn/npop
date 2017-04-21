@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -73,6 +72,7 @@ public class Reuse {
 			jc.usage();
 			System.exit(1);
 		}
+		obj.init();
 		try {
 			obj.run();
 		} catch (Exception ex) {
@@ -86,7 +86,15 @@ public class Reuse {
 	private PrintStream uriStream = null;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount;
-	private Set<String> fpOptions = Fingerprint.parseFingerprintingOptions(fingerprintingOptions);
+	private Fingerprint fingerprint;
+
+	private void init() {
+		try {
+			fingerprint = Fingerprint.getInstance(fingerprintingOptions);
+		} catch (ParameterException ex) {
+			System.err.println(ex);
+		}
+	}
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
@@ -125,8 +133,8 @@ public class Reuse {
 				@Override
 				public void handleNanopub(Nanopub np) {
 					try {
-						String fingerprint = Fingerprint.getFingerprint(np, fpOptions);
-						reusableNanopubs.put(fingerprint, np.getUri().toString());
+						String fp = fingerprint.getFingerprint(np);
+						reusableNanopubs.put(fp, np.getUri().toString());
 						reusableCount++;
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
@@ -195,11 +203,11 @@ public class Reuse {
 
 	private void process(Nanopub np) throws IOException, RDFHandlerException {
 		inputCount++;
-		String fingerprint = Fingerprint.getFingerprint(np, fpOptions);
+		String fp = fingerprint.getFingerprint(np);
 		String uri = np.getUri().toString();
-		if (reusableNanopubs.containsKey(fingerprint)) {
+		if (reusableNanopubs.containsKey(fp)) {
 			reuseCount++;
-			uri = reusableNanopubs.get(fingerprint);
+			uri = reusableNanopubs.get(fp);
 		} else {
 			if (addSupersedesBacklinks) {
 				throw new RuntimeException("addSupersedesBacklinks is not yet implemented");
@@ -210,7 +218,7 @@ public class Reuse {
 			}
 		}
 		if (uriStream != null) {
-			uriStream.println(uri + " " + fingerprint);
+			uriStream.println(uri + " " + fp);
 		}
 	}
 
