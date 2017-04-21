@@ -67,6 +67,16 @@ public class Topic {
 		}
 	}
 
+	public static Topic getInstance(String args) throws ParameterException {
+		NanopubImpl.ensureLoaded();
+		if (args == null) args = "";
+		args = args.trim() + " dummy-input-file";
+		Topic obj = new Topic();
+		JCommander jc = new JCommander(obj);
+		jc.parse(args.split(" "));
+		return obj;
+	}
+
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
@@ -129,7 +139,7 @@ public class Topic {
 			TopicDetector td = (TopicDetector) Class.forName(detectorClassName).newInstance();
 			topic = td.getTopic(np);
 		} else {
-			topic = getTopic(np, ignore);
+			topic = getTopic(np);
 		}
 		writer.write(topic);
 		if (outputNanopubUri) {
@@ -138,7 +148,7 @@ public class Topic {
 		writer.write("\n");
 	}
 
-	public static String getTopic(Nanopub np, Map<String,Boolean> ignore) {
+	public String getTopic(Nanopub np) {
 		Map<Resource,Integer> resourceCount = new HashMap<>();
 		for (Statement st : np.getAssertion()) {
 			Resource subj = st.getSubject();
