@@ -57,10 +57,13 @@ public class Reuse {
 	private String outFormat;
 
 	@com.beust.jcommander.Parameter(names = "-f", description = "Fingerprinting options")
-	private String fingerprintingOptions;
+	private String fingerprintOptions;
 
 	@com.beust.jcommander.Parameter(names = "-s", description = "Add npx:supersedes backlinks for changed nanopublications")
 	private boolean addSupersedesBacklinks = false;
+
+	@com.beust.jcommander.Parameter(names = "-t", description = "Topic options")
+	private String topicOptions;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -81,16 +84,25 @@ public class Reuse {
 		}
 	}
 
+	private static final String multipleNanopubs = "MULTI";
+
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
 	private PrintStream uriStream = null;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
-	private int reusableCount, uniqueReusableCount, inputCount, reuseCount;
+	private Map<String,String> existingTopics = new HashMap<>();
+	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount;
 	private Fingerprint fingerprint;
+	private Topic topic;
 
 	private void init() {
 		try {
-			fingerprint = Fingerprint.getInstance(fingerprintingOptions);
+			fingerprint = Fingerprint.getInstance(fingerprintOptions);
+		} catch (ParameterException ex) {
+			System.err.println(ex);
+		}
+		try {
+			topic = Topic.getInstance(topicOptions);
 		} catch (ParameterException ex) {
 			System.err.println(ex);
 		}
@@ -103,6 +115,7 @@ public class Reuse {
 		uniqueReusableCount = 0;
 		inputCount = 0;
 		reuseCount = 0;
+		inTopicDuplCount = 0;
 
 		// Loading nanopubs to be reused:
 		if (reuseNanopubFile.getName().endsWith(".txt")) {
@@ -136,6 +149,15 @@ public class Reuse {
 						String fp = fingerprint.getFingerprint(np);
 						reusableNanopubs.put(fp, np.getUri().toString());
 						reusableCount++;
+						if (addSupersedesBacklinks) {
+							String t = topic.getTopic(np);
+							if (existingTopics.containsKey(t)) {
+								existingTopics.put(t, multipleNanopubs);
+								inTopicDuplCount++;
+							} else {
+								existingTopics.put(t, np.getUri().toString());
+							}
+						}
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
 					} catch (RDFHandlerException ex) {
@@ -198,6 +220,9 @@ public class Reuse {
 			System.err.println("Older dataset count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
 			System.err.println("Newer dataset count: " + inputCount);
 			System.err.println("Reuse count: " + reuseCount);
+			if (addSupersedesBacklinks) {
+				System.err.println("Duplicate topics in older dataset: " + inTopicDuplCount);
+			}
 		}
 	}
 
