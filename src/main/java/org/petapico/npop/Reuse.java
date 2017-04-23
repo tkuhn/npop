@@ -85,13 +85,14 @@ public class Reuse {
 	}
 
 	private static final String multipleNanopubs = "MULTI";
+	private static final String matchedNanopub = "MATCHED";
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
 	private PrintStream uriStream = null;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
-	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount;
+	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount, outTopicDuplCount, topicMatchErrors, topicMatchCount;
 	private Fingerprint fingerprint;
 	private Topic topic;
 
@@ -116,6 +117,8 @@ public class Reuse {
 		inputCount = 0;
 		reuseCount = 0;
 		inTopicDuplCount = 0;
+		topicMatchCount = 0;
+		topicMatchErrors = 0;
 
 		// Loading nanopubs to be reused:
 		if (reuseNanopubFile.getName().endsWith(".txt")) {
@@ -154,6 +157,7 @@ public class Reuse {
 							if (existingTopics.containsKey(t)) {
 								existingTopics.put(t, multipleNanopubs);
 								inTopicDuplCount++;
+								topicMatchErrors++;
 							} else {
 								existingTopics.put(t, np.getUri().toString());
 							}
@@ -221,7 +225,10 @@ public class Reuse {
 			System.err.println("Newer dataset count: " + inputCount);
 			System.err.println("Reuse count: " + reuseCount);
 			if (addSupersedesBacklinks) {
+				System.err.println("Topic match count: " + topicMatchCount);
 				System.err.println("Duplicate topics in older dataset: " + inTopicDuplCount);
+				System.err.println("Duplicate topics in newer dataset: " + outTopicDuplCount);
+				System.err.println("Total topic matching errors: " + topicMatchErrors);
 			}
 		}
 	}
@@ -235,8 +242,21 @@ public class Reuse {
 			uri = reusableNanopubs.get(fp);
 		} else {
 			if (addSupersedesBacklinks) {
-				throw new RuntimeException("addSupersedesBacklinks is not yet implemented");
-				// TODO
+				String t = topic.getTopic(np);
+				if (existingTopics.containsKey(t)) {
+					String et = existingTopics.get(t);
+					if (et == multipleNanopubs) {
+						topicMatchErrors++;
+					} else if (et == matchedNanopub) {
+						topicMatchErrors++;
+						outTopicDuplCount++;
+					} else {
+						topicMatchCount++;
+						existingTopics.put(t, matchedNanopub);
+						throw new RuntimeException("addSupersedesBacklinks is not yet implemented");
+						// TODO
+					}
+				}
 			}
 			if (outputNew) {
 				output(np);
