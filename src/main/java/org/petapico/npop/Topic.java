@@ -31,7 +31,7 @@ import com.beust.jcommander.ParameterException;
 
 public class Topic {
 
-	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
+	@com.beust.jcommander.Parameter(description = "input-nanopubs")
 	private List<File> inputNanopubs = new ArrayList<File>();
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
@@ -70,10 +70,9 @@ public class Topic {
 	public static Topic getInstance(String args) throws ParameterException {
 		NanopubImpl.ensureLoaded();
 		if (args == null) args = "";
-		args = args.trim() + " dummy-input-file";
 		Topic obj = new Topic();
 		JCommander jc = new JCommander(obj);
-		jc.parse(args.split(" "));
+		jc.parse(args.trim().split(" "));
 		return obj;
 	}
 
@@ -82,12 +81,15 @@ public class Topic {
 	private BufferedWriter writer;
 	private Map<String,Boolean> ignore = new HashMap<>();
 
-	private void run() throws IOException, RDFParseException, RDFHandlerException,
+	public void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
 		if (ignoreProperties != null) {
 			for (String s : ignoreProperties.trim().split("\\|")) {
 				if (!s.isEmpty()) ignore.put(s, true);
 			}
+		}
+		if (inputNanopubs == null || inputNanopubs.isEmpty()) {
+			throw new ParameterException("No input files given");
 		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {

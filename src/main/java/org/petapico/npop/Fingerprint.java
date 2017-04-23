@@ -38,7 +38,7 @@ import com.beust.jcommander.ParameterException;
 
 public class Fingerprint {
 
-	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
+	@com.beust.jcommander.Parameter(description = "input-nanopubs")
 	private List<File> inputNanopubs = new ArrayList<File>();
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
@@ -83,10 +83,9 @@ public class Fingerprint {
 	public static Fingerprint getInstance(String args) throws ParameterException {
 		NanopubImpl.ensureLoaded();
 		if (args == null) args = "";
-		args = args.trim() + " dummy-input-file";
 		Fingerprint obj = new Fingerprint();
 		JCommander jc = new JCommander(obj);
-		jc.parse(args.split(" "));
+		jc.parse(args.trim().split(" "));
 		return obj;
 	}
 
@@ -94,8 +93,11 @@ public class Fingerprint {
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
 
-	private void run() throws IOException, RDFParseException, RDFHandlerException,
+	public void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
+		if (inputNanopubs == null || inputNanopubs.isEmpty()) {
+			throw new ParameterException("No input files given");
+		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
