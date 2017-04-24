@@ -20,16 +20,25 @@ import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
+import org.nanopub.NanopubRdfHandler;
 import org.nanopub.NanopubUtils;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.Rio;
+import org.openrdf.rio.helpers.RDFHandlerBase;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 public class Reuse {
+
+	public static final URI SUPERSEDES = new URIImpl("http://purl.org/nanopub/x/supersedes");
+
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
@@ -236,13 +245,23 @@ public class Reuse {
 	private void process(Nanopub np) throws IOException, RDFHandlerException {
 		inputCount++;
 		String fp = fingerprint.getFingerprint(np);
+		String t = null;
+		if (addSupersedesBacklinks) {
+			t = topic.getTopic(np);
+		}
 		String uri = np.getUri().toString();
 		if (reusableNanopubs.containsKey(fp)) {
 			reuseCount++;
 			uri = reusableNanopubs.get(fp);
+			if (addSupersedesBacklinks) {
+				String et = existingTopics.get(t);
+				if (et == multipleNanopubs || et == matchedNanopub) {
+					topicMatchErrors++;
+				}
+				existingTopics.put(t, matchedNanopub);
+			}
 		} else {
 			if (addSupersedesBacklinks) {
-				String t = topic.getTopic(np);
 				if (existingTopics.containsKey(t)) {
 					String et = existingTopics.get(t);
 					if (et == multipleNanopubs) {
@@ -255,6 +274,7 @@ public class Reuse {
 						existingTopics.put(t, matchedNanopub);
 						throw new RuntimeException("addSupersedesBacklinks is not yet implemented");
 						// TODO
+						//uri = ...
 					}
 				}
 			}
@@ -269,6 +289,31 @@ public class Reuse {
 
 	private void output(Nanopub np) throws IOException, RDFHandlerException {
 		NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
+	}
+
+	private Nanopub addSupersedesBacklink(final URI oldUri, final Nanopub newNp) throws RDFHandlerException, MalformedNanopubException {
+		SupersedesLinkAdder linkAdder = new SupersedesLinkAdder(oldUri, newNp);
+		NanopubUtils.propagateToHandler(newNp, linkAdder);
+		return linkAdder.getNanopub();
+	}
+
+	
+	private class SupersedesLinkAdder extends NanopubRdfHandler {
+
+		private URI oldUri;
+		private Nanopub newNp;
+
+		public SupersedesLinkAdder(URI oldUri, Nanopub newNp) {
+			this.oldUri = oldUri;
+			this.newNp = newNp;
+		}
+
+		@Override
+		public void endRDF() throws RDFHandlerException {
+			handleStatement(new ContextStatementImpl(
+					newNp.getUri(), SUPERSEDES, oldUri, newNp.getPubinfoUri()));
+			super.endRDF();
+		}
 	}
 
 }
