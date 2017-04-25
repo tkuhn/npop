@@ -51,9 +51,8 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -n to be set)")
 	private File outputFile;
 
-	@com.beust.jcommander.Parameter(names = "-u", description = "Output text file with URIs and fingerprints (can afterwards be used as "+
-			"a reuse file for argument -x or to create an index)")
-	private File uriFile;
+	@com.beust.jcommander.Parameter(names = "-c", description = "Output cache file, which can afterwards be used for argument -x or to create an index)")
+	private File cacheFile;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
@@ -97,7 +96,7 @@ public class Reuse {
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
-	private PrintStream uriStream = null;
+	private PrintStream cacheStream = null;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount, outTopicDuplCount, topicMatchErrors, topicMatchCount;
@@ -130,9 +129,7 @@ public class Reuse {
 
 		if (reuseNanopubFile == null) {
 			// Initial dataset creation
-			// TODO
-		}
-		if (reuseNanopubFile.getName().endsWith(".txt")) {
+		} else if (reuseNanopubFile.getName().endsWith(".txt")) {
 			// Reuse nanopubs from cache file
 			BufferedReader br = null;
 			try {
@@ -146,7 +143,10 @@ public class Reuse {
 			    	String fingerprint = columns[1];
 			    	reusableNanopubs.put(fingerprint, uri);
 					reusableCount++;
-					// TODO: consider topics here too
+					if (addSupersedesBacklinks) {
+						String topic = columns[2];
+						recordTopic(topic, uri);
+					}
 			    }
 			} finally {
 				if (br != null) br.close();
@@ -167,14 +167,7 @@ public class Reuse {
 						reusableNanopubs.put(fp, np.getUri().toString());
 						reusableCount++;
 						if (addSupersedesBacklinks) {
-							String t = topic.getTopic(np);
-							if (existingTopics.containsKey(t)) {
-								existingTopics.put(t, multipleNanopubs);
-								inTopicDuplCount++;
-								topicMatchErrors++;
-							} else {
-								existingTopics.put(t, np.getUri().toString());
-							}
+							recordTopic(topic.getTopic(np), np.getUri().toString());
 						}
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
@@ -188,8 +181,8 @@ public class Reuse {
 		uniqueReusableCount = reusableNanopubs.size();
 
 		// Reuse matching nanopubs:
-		if (uriFile != null) {
-			uriStream = new PrintStream(uriFile);
+		if (cacheFile != null) {
+			cacheStream = new PrintStream(cacheFile);
 		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
@@ -228,9 +221,9 @@ public class Reuse {
 			if (outputStream != System.out) {
 				outputStream.close();
 			}
-			if (uriStream != null) {
-				uriStream.flush();
-				uriStream.close();
+			if (cacheStream != null) {
+				cacheStream.flush();
+				cacheStream.close();
 			}
 
 			System.err.println("Older dataset count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
@@ -242,6 +235,16 @@ public class Reuse {
 				System.err.println("Duplicate topics in newer dataset: " + outTopicDuplCount);
 				System.err.println("Total topic matching errors: " + topicMatchErrors);
 			}
+		}
+	}
+
+	private void recordTopic(String topic, String uri) {
+		if (existingTopics.containsKey(topic)) {
+			existingTopics.put(topic, multipleNanopubs);
+			inTopicDuplCount++;
+			topicMatchErrors++;
+		} else {
+			existingTopics.put(topic, uri);
 		}
 	}
 
@@ -285,8 +288,12 @@ public class Reuse {
 				output(np);
 			}
 		}
-		if (uriStream != null) {
-			uriStream.println(uri + " " + fp);
+		if (cacheStream != null) {
+			if (addSupersedesBacklinks) {
+				cacheStream.println(uri + " " + fp + " " + t);
+			} else {
+				cacheStream.println(uri + " " + fp);
+			}
 		}
 	}
 
