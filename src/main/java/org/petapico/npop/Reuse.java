@@ -42,7 +42,7 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
 
-	@com.beust.jcommander.Parameter(names = "-x", description = "Nanopubs to be reused", required = true)
+	@com.beust.jcommander.Parameter(names = "-x", description = "Nanopubs to be reused (if not given, an initial dataset is created)")
 	private File reuseNanopubFile;
 
 	@com.beust.jcommander.Parameter(names = "-n", description = "Output new nanopubs")
@@ -128,11 +128,12 @@ public class Reuse {
 		topicMatchCount = 0;
 		topicMatchErrors = 0;
 
-		// TODO: first dataset creation
-
-		// Loading nanopubs to be reused:
+		if (reuseNanopubFile == null) {
+			// Initial dataset creation
+			// TODO
+		}
 		if (reuseNanopubFile.getName().endsWith(".txt")) {
-			System.err.println("zzz");
+			// Reuse nanopubs from cache file
 			BufferedReader br = null;
 			try {
 				br = new BufferedReader(new FileReader(reuseNanopubFile));
@@ -151,6 +152,7 @@ public class Reuse {
 				if (br != null) br.close();
 			}
 		} else {
+			// Reuse nanopubs from full nanopub file
 			if (reuseFormat != null) {
 				rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
 			} else {
