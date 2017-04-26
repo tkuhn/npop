@@ -43,8 +43,8 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs to ignore, separated by '|' (has no effect if -d is set)")
 	private String ignoreProperties;
 
-	@com.beust.jcommander.Parameter(names = "-d", description = "Topic detector class")
-	private String detectorClass;
+	@com.beust.jcommander.Parameter(names = "-h", description = "Topic handler class")
+	private String handlerClass;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -56,6 +56,7 @@ public class Topic {
 			jc.usage();
 			System.exit(1);
 		}
+		obj.init();
 		try {
 			obj.run();
 		} catch (Exception ex) {
@@ -70,6 +71,7 @@ public class Topic {
 		Topic obj = new Topic();
 		JCommander jc = new JCommander(obj);
 		jc.parse(args.trim().split(" "));
+		obj.init();
 		return obj;
 	}
 
@@ -77,6 +79,21 @@ public class Topic {
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
 	private Map<String,Boolean> ignore = new HashMap<>();
+	private TopicHandler topicHandler;
+
+	private void init() {
+		if (handlerClass != null && !handlerClass.isEmpty()) {
+			String detectorClassName = handlerClass;
+			if (!handlerClass.contains(".")) {
+				detectorClassName = "org.petapico.npop.topic." + handlerClass;
+			}
+			try {
+				topicHandler = (TopicHandler) Class.forName(detectorClassName).newInstance();
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException(ex);
+			}
+		}
+	}
 
 	public void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
@@ -125,19 +142,9 @@ public class Topic {
 	}
 
 	public String getTopic(Nanopub np) {
-		if (detectorClass != null && !detectorClass.isEmpty()) {
+		if (topicHandler != null) {
 			// Get topic via handler class
-			String detectorClassName = detectorClass;
-			if (!detectorClass.contains(".")) {
-				detectorClassName = "org.petapico.npop.topic." + detectorClass;
-			}
-			TopicHandler td;
-			try {
-				td = (TopicHandler) Class.forName(detectorClassName).newInstance();
-			} catch (ReflectiveOperationException ex) {
-				throw new RuntimeException(ex);
-			}
-			return td.getTopic(np);
+			return topicHandler.getTopic(np);
 		} else {
 			// Calculate topic directly
 			Map<Resource,Integer> resourceCount = new HashMap<>();

@@ -26,8 +26,6 @@ import org.nanopub.NanopubUtils;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -56,8 +54,8 @@ public class Fingerprint {
 	@com.beust.jcommander.Parameter(names = "--ignore-pubinfo", description = "Ignore the publication info graph for fingerprint calculation")
 	private boolean ignorePubinfo;
 
-	@com.beust.jcommander.Parameter(names = "--test-disgenet", description = "Just for testing...")
-	private boolean testDisgenet;
+	@com.beust.jcommander.Parameter(names = "-h", description = "Fingerprint handler class")
+	private String handlerClass;
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
@@ -69,6 +67,7 @@ public class Fingerprint {
 			jc.usage();
 			System.exit(1);
 		}
+		obj.init();
 		try {
 			obj.run();
 		} catch (Exception ex) {
@@ -83,12 +82,28 @@ public class Fingerprint {
 		Fingerprint obj = new Fingerprint();
 		JCommander jc = new JCommander(obj);
 		jc.parse(args.trim().split(" "));
+		obj.init();
 		return obj;
 	}
 
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
+	private FingerprintHandler fingerprintHandler;
+
+	private void init() {
+		if (handlerClass != null && !handlerClass.isEmpty()) {
+			String detectorClassName = handlerClass;
+			if (!handlerClass.contains(".")) {
+				detectorClassName = "org.petapico.npop.fingerprint." + handlerClass;
+			}
+			try {
+				fingerprintHandler = (FingerprintHandler) Class.forName(detectorClassName).newInstance();
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException(ex);
+			}
+		}
+	}
 
 	public void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
@@ -134,14 +149,19 @@ public class Fingerprint {
 	}
 
 	public String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
-		String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
-		if (artifactCode == null) {
-			throw new RuntimeException("Not a trusty URI: " + np.getUri());
+		if (fingerprintHandler != null) {
+			// Get fingerprint via handler class
+			return fingerprintHandler.getFingerprint(np);
+		} else {
+			String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
+			if (artifactCode == null) {
+				throw new RuntimeException("Not a trusty URI: " + np.getUri());
+			}
+			List<Statement> statements = getNormalizedStatements(np);
+			statements = RdfPreprocessor.run(statements, artifactCode);
+			String fingerprint = RdfHasher.makeArtifactCode(statements);
+			return fingerprint.substring(2);
 		}
-		List<Statement> statements = getNormalizedStatements(np);
-		statements = RdfPreprocessor.run(statements, artifactCode);
-		String fingerprint = RdfHasher.makeArtifactCode(statements);
-		return fingerprint.substring(2);
 	}
 
 	private List<Statement> getNormalizedStatements(Nanopub np) {
@@ -155,12 +175,6 @@ public class Fingerprint {
 			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
 			if (isInPubInfo && ignorePubinfo) continue;
 			Resource subj = st.getSubject();
-			if (testDisgenet && (
-					subj.stringValue().startsWith("http://rdf.disgenet.org/resource/gda/DGN") ||
-					subj.stringValue().startsWith("http://rdf.disgenet.org/gene-disease-association.ttl#DGN"))) {
-				subj = new URIImpl("http://rdf.disgenet.org/resource/gda/DGN");
-				st = new ContextStatementImpl(subj, st.getPredicate(), st.getObject(), st.getContext());			
-			}
 			URI pred = st.getPredicate();
 			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
@@ -168,6 +182,13 @@ public class Fingerprint {
 			n.add(st);
 		}
 		return n;
+	}
+
+
+	public interface FingerprintHandler {
+
+		public String getFingerprint(Nanopub np);
+
 	}
 
 }
