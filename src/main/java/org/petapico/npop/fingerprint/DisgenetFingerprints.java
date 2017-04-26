@@ -11,7 +11,7 @@ import org.nanopub.Nanopub;
 import org.nanopub.NanopubUtils;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.petapico.npop.Fingerprint.FingerprintHandler;
 
@@ -39,7 +39,11 @@ public class DisgenetFingerprints implements FingerprintHandler {
 			if (subj.stringValue().startsWith("http://rdf.disgenet.org/resource/gda/DGN") ||
 					subj.stringValue().startsWith("http://rdf.disgenet.org/gene-disease-association.ttl#DGN")) {
 				subj = new URIImpl("http://rdf.disgenet.org/resource/gda/DGN");
-				st = new ContextStatementImpl(subj, st.getPredicate(), st.getObject(), st.getContext());			
+				// ignore context:
+				st = new StatementImpl(subj, st.getPredicate(), st.getObject());			
+			} else {
+				// ignore context:
+				st = new StatementImpl(subj, st.getPredicate(), st.getObject());
 			}
 			n.add(st);
 		}
