@@ -22,7 +22,6 @@ public class DisgenetFingerprints implements FingerprintHandler {
 	private static final URI assertionUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/assertion");
 	private static final URI provUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/provenance");
 	private static final URI timestampPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/timestamp");
-	private static final URI disgenetVoidPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-void");
 	private static final URI disgenetGdaPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-gda");
 
 	private static final URI pav1importedOn = new URIImpl("http://purl.org/pav/importedOn");
@@ -79,8 +78,14 @@ public class DisgenetFingerprints implements FingerprintHandler {
 	private Value transform(Value v) {
 		if (v instanceof URI) {
 			String s = ((URI) v).stringValue();
-			if (s.startsWith("http://rdf.disgenet.org/v")) {
-				return disgenetVoidPlaceholder;
+			if (s.matches("http://rdf.disgenet.org/v.*/void.*")) {
+				if (s.matches("http://rdf.disgenet.org/v.*/void.*-20......")) {
+					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)(.*)-20......$", "http://rdf.disgenet.org/vx.x.x/void/$2");
+					return new URIImpl(r);
+				} else {
+					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)", "http://rdf.disgenet.org/vx.x.x/void/");
+					return new URIImpl(r);
+				}
 			} else if (s.startsWith("http://purl.obolibrary.org/obo/eco.owl#")) {
 				return new URIImpl(s.replace("http://purl.obolibrary.org/obo/eco.owl#", "http://purl.obolibrary.org/obo/"));
 			}
