@@ -116,7 +116,7 @@ public class Fingerprint {
 				@Override
 				public void handleNanopub(Nanopub np) {
 					try {
-						process(np);
+						writer.write(np.getUri() + " " + getFingerprint(np) + "\n");
 					} catch (RDFHandlerException ex) {
 						throw new RuntimeException(ex);
 					} catch (IOException ex) {
@@ -131,10 +131,6 @@ public class Fingerprint {
 				writer.close();
 			}
 		}
-	}
-
-	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(np.getUri() + " " + getFingerprint(np) + "\n");
 	}
 
 	public String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {

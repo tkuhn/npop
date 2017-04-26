@@ -40,9 +40,6 @@ public class Topic {
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
-	@com.beust.jcommander.Parameter(names = "-u", description = "Include the nanopub URI in output")
-	private boolean outputNanopubUri = false;
-
 	@com.beust.jcommander.Parameter(names = "-i", description = "Property URIs to ignore, separated by '|' (has no effect if -d is set)")
 	private String ignoreProperties;
 
@@ -112,9 +109,7 @@ public class Topic {
 				@Override
 				public void handleNanopub(Nanopub np) {
 					try {
-						process(np);
-					} catch (RDFHandlerException ex) {
-						throw new RuntimeException(ex);
+						writer.write(np.getUri() + " " + getTopic(np) + "\n");
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
 					}
@@ -127,14 +122,6 @@ public class Topic {
 				writer.close();
 			}
 		}
-	}
-
-	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		writer.write(getTopic(np));
-		if (outputNanopubUri) {
-			writer.write(" " + np.getUri());
-		}
-		writer.write("\n");
 	}
 
 	public String getTopic(Nanopub np) {
