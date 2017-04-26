@@ -50,9 +50,6 @@ public class Fingerprint {
 	@com.beust.jcommander.Parameter(names = "--ignore-head", description = "Ignore the head graph for fingerprint calculation")
 	private boolean ignoreHead;
 
-	@com.beust.jcommander.Parameter(names = "--ignore-assertion", description = "Ignore the assertion graph for fingerprint calculation")
-	private boolean ignoreAssertion;
-
 	@com.beust.jcommander.Parameter(names = "--ignore-prov", description = "Ignore the provenance graph for fingerprint calculation")
 	private boolean ignoreProv;
 
@@ -157,8 +154,6 @@ public class Fingerprint {
 		for (Statement st : statements) {
 			boolean isInHead = st.getContext().equals(np.getHeadUri());
 			if (isInHead && ignoreHead) continue;
-			boolean isInAssertion = st.getContext().equals(np.getAssertionUri());
-			if (isInAssertion && ignoreAssertion) continue;
 			boolean isInProv = st.getContext().equals(np.getProvenanceUri());
 			if (isInProv && ignoreProv) continue;
 			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
@@ -171,14 +166,6 @@ public class Fingerprint {
 				st = new ContextStatementImpl(subj, st.getPredicate(), st.getObject(), st.getContext());			
 			}
 			URI pred = st.getPredicate();
-//			if (isInPubInfo && options.contains("ignore-version") && 
-//					(pred.toString().equals("http://purl.org/pav/2.0/version") || pred.toString().equals("http://purl.org/pav/version"))) {
-//				continue;
-//			}
-//			if (isInProv && options.contains("ignore-imported-on") && 
-//					(pred.toString().equals("http://purl.org/pav/2.0/importedOn") || pred.toString().equals("http://purl.org/pav/importedOn"))) {
-//				continue;
-//			}
 			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
 			}

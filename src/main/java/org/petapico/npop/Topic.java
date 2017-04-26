@@ -117,8 +117,6 @@ public class Topic {
 						throw new RuntimeException(ex);
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
-					} catch (ReflectiveOperationException ex) {
-						throw new RuntimeException(ex);
 					}
 				}
 
@@ -131,19 +129,8 @@ public class Topic {
 		}
 	}
 
-	private void process(Nanopub np) throws RDFHandlerException, IOException, ReflectiveOperationException {
-		String topic;
-		if (detectorClass != null && !detectorClass.isEmpty()) {
-			String detectorClassName = detectorClass;
-			if (!detectorClass.contains(".")) {
-				detectorClassName = "org.petapico.npop.topic." + detectorClass;
-			}
-			TopicDetector td = (TopicDetector) Class.forName(detectorClassName).newInstance();
-			topic = td.getTopic(np);
-		} else {
-			topic = getTopic(np);
-		}
-		writer.write(topic);
+	private void process(Nanopub np) throws RDFHandlerException, IOException {
+		writer.write(getTopic(np));
 		if (outputNanopubUri) {
 			writer.write(" " + np.getUri());
 		}
@@ -151,30 +138,46 @@ public class Topic {
 	}
 
 	public String getTopic(Nanopub np) {
-		Map<Resource,Integer> resourceCount = new HashMap<>();
-		for (Statement st : np.getAssertion()) {
-			Resource subj = st.getSubject();
-			if (subj.equals(np.getUri())) continue;
-			if (ignore.containsKey(st.getPredicate().stringValue())) continue;
-			if (!resourceCount.containsKey(subj)) resourceCount.put(subj, 0);
-			resourceCount.put(subj, resourceCount.get(subj) + 1);
-		}
-		int max = 0;
-		Resource topic = null;
-		for (Resource r : resourceCount.keySet()) {
-			int c = resourceCount.get(r);
-			if (c > max) {
-				topic = r;
-				max = c;
-			} else if (c == max) {
-				topic = null;
+		if (detectorClass != null && !detectorClass.isEmpty()) {
+			// Get topic via handler class
+			String detectorClassName = detectorClass;
+			if (!detectorClass.contains(".")) {
+				detectorClassName = "org.petapico.npop.topic." + detectorClass;
 			}
+			TopicHandler td;
+			try {
+				td = (TopicHandler) Class.forName(detectorClassName).newInstance();
+			} catch (ReflectiveOperationException ex) {
+				throw new RuntimeException(ex);
+			}
+			return td.getTopic(np);
+		} else {
+			// Calculate topic directly
+			Map<Resource,Integer> resourceCount = new HashMap<>();
+			for (Statement st : np.getAssertion()) {
+				Resource subj = st.getSubject();
+				if (subj.equals(np.getUri())) continue;
+				if (ignore.containsKey(st.getPredicate().stringValue())) continue;
+				if (!resourceCount.containsKey(subj)) resourceCount.put(subj, 0);
+				resourceCount.put(subj, resourceCount.get(subj) + 1);
+			}
+			int max = 0;
+			Resource topic = null;
+			for (Resource r : resourceCount.keySet()) {
+				int c = resourceCount.get(r);
+				if (c > max) {
+					topic = r;
+					max = c;
+				} else if (c == max) {
+					topic = null;
+				}
+			}
+			return topic + "";
 		}
-		return topic + "";
 	}
 
 
-	public interface TopicDetector {
+	public interface TopicHandler {
 
 		public String getTopic(Nanopub np);
 

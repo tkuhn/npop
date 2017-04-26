@@ -10,9 +10,9 @@ import org.nanopub.Nanopub;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.vocabulary.RDF;
-import org.petapico.npop.Topic.TopicDetector;
+import org.petapico.npop.Topic.TopicHandler;
 
-public class WikipathwaysTopics implements TopicDetector {
+public class WikipathwaysTopics implements TopicHandler {
 
 	@Override
 	public String getTopic(Nanopub np) {
