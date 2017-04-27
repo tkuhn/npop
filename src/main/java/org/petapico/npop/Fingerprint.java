@@ -1,7 +1,5 @@
 package org.petapico.npop;
 
-import static org.nanopub.SimpleTimestampPattern.isCreationTimeProperty;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,23 +11,17 @@ import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
-import net.trustyuri.TrustyUriUtils;
-import net.trustyuri.rdf.RdfHasher;
-import net.trustyuri.rdf.RdfPreprocessor;
 
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.nanopub.NanopubUtils;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.Rio;
+import org.petapico.npop.fingerprint.DefaultFingerprints;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -102,6 +94,8 @@ public class Fingerprint {
 			} catch (ReflectiveOperationException ex) {
 				throw new RuntimeException(ex);
 			}
+		} else {
+			fingerprintHandler = new DefaultFingerprints(ignoreHead, ignoreProv, ignorePubinfo);
 		}
 	}
 
@@ -149,39 +143,7 @@ public class Fingerprint {
 	}
 
 	public String getFingerprint(Nanopub np) throws RDFHandlerException, IOException {
-		if (fingerprintHandler != null) {
-			// Get fingerprint via handler class
-			return fingerprintHandler.getFingerprint(np);
-		} else {
-			String artifactCode = TrustyUriUtils.getArtifactCode(np.getUri().toString());
-			if (artifactCode == null) {
-				throw new RuntimeException("Not a trusty URI: " + np.getUri());
-			}
-			List<Statement> statements = getNormalizedStatements(np);
-			statements = RdfPreprocessor.run(statements, artifactCode);
-			String fingerprint = RdfHasher.makeArtifactCode(statements);
-			return fingerprint.substring(2);
-		}
-	}
-
-	private List<Statement> getNormalizedStatements(Nanopub np) {
-		List<Statement> statements = NanopubUtils.getStatements(np);
-		List<Statement> n = new ArrayList<>();
-		for (Statement st : statements) {
-			boolean isInHead = st.getContext().equals(np.getHeadUri());
-			if (isInHead && ignoreHead) continue;
-			boolean isInProv = st.getContext().equals(np.getProvenanceUri());
-			if (isInProv && ignoreProv) continue;
-			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
-			if (isInPubInfo && ignorePubinfo) continue;
-			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
-			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
-				continue;
-			}
-			n.add(st);
-		}
-		return n;
+		return fingerprintHandler.getFingerprint(np);
 	}
 
 

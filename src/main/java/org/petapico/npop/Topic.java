@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -19,12 +17,11 @@ import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.Rio;
+import org.petapico.npop.topic.DefaultTopics;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -78,7 +75,6 @@ public class Topic {
 	private RDFFormat rdfInFormat;
 	private OutputStream outputStream = System.out;
 	private BufferedWriter writer;
-	private Map<String,Boolean> ignore = new HashMap<>();
 	private TopicHandler topicHandler;
 
 	private void init() {
@@ -92,16 +88,13 @@ public class Topic {
 			} catch (ReflectiveOperationException ex) {
 				throw new RuntimeException(ex);
 			}
+		} else {
+			topicHandler = new DefaultTopics(ignoreProperties);
 		}
 	}
 
 	public void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
-		if (ignoreProperties != null) {
-			for (String s : ignoreProperties.trim().split("\\|")) {
-				if (!s.isEmpty()) ignore.put(s, true);
-			}
-		}
 		if (inputNanopubs == null || inputNanopubs.isEmpty()) {
 			throw new ParameterException("No input files given");
 		}
@@ -142,32 +135,7 @@ public class Topic {
 	}
 
 	public String getTopic(Nanopub np) {
-		if (topicHandler != null) {
-			// Get topic via handler class
-			return topicHandler.getTopic(np);
-		} else {
-			// Calculate topic directly
-			Map<Resource,Integer> resourceCount = new HashMap<>();
-			for (Statement st : np.getAssertion()) {
-				Resource subj = st.getSubject();
-				if (subj.equals(np.getUri())) continue;
-				if (ignore.containsKey(st.getPredicate().stringValue())) continue;
-				if (!resourceCount.containsKey(subj)) resourceCount.put(subj, 0);
-				resourceCount.put(subj, resourceCount.get(subj) + 1);
-			}
-			int max = 0;
-			Resource topic = null;
-			for (Resource r : resourceCount.keySet()) {
-				int c = resourceCount.get(r);
-				if (c > max) {
-					topic = r;
-					max = c;
-				} else if (c == max) {
-					topic = null;
-				}
-			}
-			return topic + "";
-		}
+		return topicHandler.getTopic(np);
 	}
 
 
