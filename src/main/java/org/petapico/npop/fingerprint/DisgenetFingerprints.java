@@ -79,8 +79,8 @@ public class DisgenetFingerprints implements FingerprintHandler {
 		if (v instanceof URI) {
 			String s = ((URI) v).stringValue();
 			if (s.matches("http://rdf.disgenet.org/v.*/void.*")) {
-				if (s.matches("http://rdf.disgenet.org/v.*/void.*-20......")) {
-					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)(.*)-20......$", "http://rdf.disgenet.org/vx.x.x/void/$2");
+				if (s.matches("http://rdf.disgenet.org/v.*/void.*-20[0-9]*")) {
+					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)(.*)-20[0-9]*$", "http://rdf.disgenet.org/vx.x.x/void/$2");
 					return new URIImpl(r);
 				} else {
 					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)", "http://rdf.disgenet.org/vx.x.x/void/");
