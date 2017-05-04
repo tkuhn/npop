@@ -33,6 +33,9 @@ public class Filter {
 	@com.beust.jcommander.Parameter(names = "-f", description = "Filter by URI or literal")
 	private String filter = null;
 
+	@com.beust.jcommander.Parameter(names = "--or", description = "Treat blanks in filter string as OR connectives")
+	private boolean orFilter = false;
+
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
 
@@ -62,9 +65,14 @@ public class Filter {
 
 	private RDFFormat rdfInFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
+	private String[] filterComponents;
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
+		if (orFilter) {
+			filterComponents = filter.split(" ");
+		}
+
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
@@ -106,29 +114,39 @@ public class Filter {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException {
-		if (filter != null) {
-			boolean keep = false;
-			for (Statement st : NanopubUtils.getStatements(np)) {
-				if (st.getSubject().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getPredicate().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getObject().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-				if (st.getContext().stringValue().equals(filter)) {
-					keep = true;
-					break;
-				}
-			}
-			if (!keep) return;
+		if (orFilter) {
+			if (!matchesFilterComponents(np, filterComponents)) return;
+		} else if (filter != null) {
+			if (!matchesFilter(np, filter)) return;
 		}
 		NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
+	}
+
+	private static boolean matchesFilter(Nanopub np, String filter) {
+		for (Statement st : NanopubUtils.getStatements(np)) {
+			if (st.getSubject().stringValue().equals(filter)) {
+				return true;
+			}
+			if (st.getPredicate().stringValue().equals(filter)) {
+				return true;
+			}
+			if (st.getObject().stringValue().equals(filter)) {
+				return true;
+			}
+			if (st.getContext().stringValue().equals(filter)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean matchesFilterComponents(Nanopub np, String[] filterComponents) {
+		for (String f : filterComponents) {
+			if (matchesFilter(np, f)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
