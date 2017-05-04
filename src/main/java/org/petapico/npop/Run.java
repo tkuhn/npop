@@ -51,6 +51,7 @@ public class Run {
 		addRunnableClass(Fingerprint.class, "fingerprint");
 		addRunnableClass(Topic.class, "topic");
 		addRunnableClass(Reuse.class, "reuse");
+		addRunnableClass(Count.class, "count");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
