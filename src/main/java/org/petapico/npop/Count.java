@@ -64,6 +64,11 @@ public class Count {
 			throw new ParameterException("No input files given");
 		}
 		for (File inputFile : inputNanopubs) {
+			npCount = 0;
+			headCount = 0;
+			assertionCount = 0;
+			pubinfoCount = 0;
+
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
 			} else {
@@ -78,15 +83,19 @@ public class Count {
 				}
 
 			});
+			System.out.println("Nanopublications: " + npCount);
+			System.out.println("Head triples: " + headCount + " (average: " + ((((float) headCount)) / npCount) + ")");
+			System.out.println("Assertion triples: " + assertionCount + " (average: " + ((((float) assertionCount)) / npCount) + ")");
+			System.out.println("Provenance triples: " + provCount + " (average: " + ((((float) provCount)) / npCount) + ")");
+			System.out.println("Pubinfo triples: " + pubinfoCount + " (average: " + ((((float) pubinfoCount)) / npCount) + ")");
+			int t = headCount + assertionCount + provCount + pubinfoCount;
+			System.out.println("Total triples: " + t + " (average: " + ((((float) t)) / npCount) + ")");
+			System.out.println();
+			System.out.println("Table:");
+			System.out.println("dataseet,nanopubs,head,assertion,provenance,pubinfo");
+			System.out.println(inputFile.getName() + "," + headCount + "," + assertionCount + "," + provCount + "," + pubinfoCount);
+			System.out.println();
 		}
-
-		System.out.println("Nanopublications: " + npCount);
-		System.out.println("Head triples: " + headCount + " (average: " + ((((float) headCount)) / npCount) + ")");
-		System.out.println("Assertion triples: " + assertionCount + " (average: " + ((((float) assertionCount)) / npCount) + ")");
-		System.out.println("Provenance triples: " + provCount + " (average: " + ((((float) provCount)) / npCount) + ")");
-		System.out.println("Pubinfo triples: " + pubinfoCount + " (average: " + ((((float) pubinfoCount)) / npCount) + ")");
-		int t = headCount + assertionCount + provCount + pubinfoCount;
-		System.out.println("Total triples: " + t + " (average: " + ((((float) t)) / npCount) + ")");
 	}
 
 	public void countTriples(Nanopub np) {
