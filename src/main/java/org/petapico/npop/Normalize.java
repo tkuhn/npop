@@ -138,6 +138,9 @@ public class Normalize {
 	}
 
 	private Value transform(Value v, Nanopub np) {
+		if (v.equals(np.getUri())) {
+			return FingerprintHandler.nanopubUriPlaceholder;
+		}
 		if (v.equals(np.getAssertionUri())) {
 			return FingerprintHandler.assertionUriPlaceholder;
 		}

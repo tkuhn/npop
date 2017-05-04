@@ -6,6 +6,7 @@ import org.openrdf.model.impl.URIImpl;
 
 public interface FingerprintHandler {
 
+	public static final URI nanopubUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/nanopuburi");
 	public static final URI headUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/head");
 	public static final URI assertionUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/assertion");
 	public static final URI provUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/provenance");
