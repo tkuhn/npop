@@ -65,24 +65,25 @@ public class Union {
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
+		if (outputFile == null) {
+			if (outFormat == null) {
+				outFormat = "trig";
+			}
+			rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+		} else {
+			rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+			if (outputFile.getName().endsWith(".gz")) {
+				outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
+			} else {
+				outputStream = new FileOutputStream(outputFile);
+			}
+		}
+
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
 			} else {
 				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
-			}
-			if (outputFile == null) {
-				if (outFormat == null) {
-					outFormat = "trig";
-				}
-				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
-			} else {
-				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
-				if (outputFile.getName().endsWith(".gz")) {
-					outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
-				} else {
-					outputStream = new FileOutputStream(outputFile);
-				}
 			}
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
@@ -98,12 +99,12 @@ public class Union {
 
 			});
 
-			System.err.println(duplicates + " duplicates eliminated");
+		}
 
-			outputStream.flush();
-			if (outputStream != System.out) {
-				outputStream.close();
-			}
+		System.err.println(duplicates + " duplicates eliminated");
+		outputStream.flush();
+		if (outputStream != System.out) {
+			outputStream.close();
 		}
 	}
 
