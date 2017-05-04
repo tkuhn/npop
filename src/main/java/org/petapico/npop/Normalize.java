@@ -1,7 +1,5 @@
 package org.petapico.npop;
 
-import static org.nanopub.SimpleTimestampPattern.isCreationTimeProperty;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,6 +23,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -36,6 +35,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 public class Normalize {
+
+	public static final URI graphPlaceholer = new URIImpl("http://purl.org/nanopub/placeholders/graph");
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
@@ -120,35 +121,33 @@ public class Normalize {
 		for (Statement st : statements) {
 			boolean isInHead = st.getContext().equals(np.getHeadUri());
 			if (isInHead) continue;
-			Resource graph = st.getContext();
+			boolean isInProvenance = st.getContext().equals(np.getProvenanceUri());
+			boolean isInPubinfo = st.getContext().equals(np.getPubinfoUri());
+			URI toBeReplacedUri = null;
+			URI replacementUri = null;
+			if (isInProvenance) {
+				toBeReplacedUri = np.getAssertionUri();
+				replacementUri = FingerprintHandler.assertionUriPlaceholder;
+			} else if (isInPubinfo) {
+				toBeReplacedUri = np.getUri();
+				replacementUri = FingerprintHandler.nanopubUriPlaceholder;
+			}
 			Resource subj = st.getSubject();
 			URI pred = st.getPredicate();
 			Value obj = st.getObject();
-			boolean isInPubinfo = st.getContext().equals(np.getPubinfoUri());
-			if (isInPubinfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
-				obj = FingerprintHandler.timestampPlaceholder;
-			}
 			n.add(new ContextStatementImpl(
-					(Resource) transform(subj, np),
-					(URI) transform(pred, np),
-					transform(obj, np),
-					(Resource) transform(graph, np)));
+					(Resource) transform(subj, toBeReplacedUri, replacementUri),
+					(URI) transform(pred, toBeReplacedUri, replacementUri),
+					transform(obj, toBeReplacedUri, replacementUri),
+					graphPlaceholer));
 		}
 		return n;
 	}
 
-	private Value transform(Value v, Nanopub np) {
-		if (v.equals(np.getUri())) {
-			return FingerprintHandler.nanopubUriPlaceholder;
-		}
-		if (v.equals(np.getAssertionUri())) {
-			return FingerprintHandler.assertionUriPlaceholder;
-		}
-		if (v.equals(np.getProvenanceUri())) {
-			return FingerprintHandler.provUriPlaceholder;
-		}
-		if (v.equals(np.getPubinfoUri())) {
-			return FingerprintHandler.pubinfoUriPlaceholder;
+	private Value transform(Value v, URI toBeReplacedUri, URI replacementUri) {
+		if (toBeReplacedUri == null) return v;
+		if (v.equals(toBeReplacedUri)) {
+			return replacementUri;
 		}
 		return v;
 	}
