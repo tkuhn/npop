@@ -93,7 +93,7 @@ public class Count {
 			System.out.println();
 			System.out.println("Table:");
 			System.out.println("dataseet,nanopubs,head,assertion,provenance,pubinfo");
-			System.out.println(inputFile.getName() + "," + headCount + "," + assertionCount + "," + provCount + "," + pubinfoCount);
+			System.out.println(inputFile.getName() + "," + npCount + "," + headCount + "," + assertionCount + "," + provCount + "," + pubinfoCount);
 			System.out.println();
 		}
 	}
