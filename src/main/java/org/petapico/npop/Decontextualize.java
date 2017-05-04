@@ -34,7 +34,7 @@ import org.petapico.npop.fingerprint.FingerprintHandler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
-public class Normalize {
+public class Decontextualize {
 
 	public static final URI graphPlaceholer = new URIImpl("http://purl.org/nanopub/placeholders/graph");
 
@@ -49,7 +49,7 @@ public class Normalize {
 
 	public static void main(String[] args) {
 		NanopubImpl.ensureLoaded();
-		Normalize obj = new Normalize();
+		Decontextualize obj = new Decontextualize();
 		JCommander jc = new JCommander(obj);
 		try {
 			jc.parse(args);

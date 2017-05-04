@@ -52,7 +52,7 @@ public class Run {
 		addRunnableClass(Topic.class, "topic");
 		addRunnableClass(Reuse.class, "reuse");
 		addRunnableClass(Count.class, "count");
-		addRunnableClass(Normalize.class, "normalize");
+		addRunnableClass(Decontextualize.class, "decontext");
 		addRunnableClass(Union.class, "union");
 	}
 
