@@ -53,6 +53,7 @@ public class Run {
 		addRunnableClass(Reuse.class, "reuse");
 		addRunnableClass(Count.class, "count");
 		addRunnableClass(Normalize.class, "normalize");
+		addRunnableClass(Union.class, "union");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
