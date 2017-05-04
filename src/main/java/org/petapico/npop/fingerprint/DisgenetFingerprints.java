@@ -15,14 +15,8 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.URIImpl;
-import org.petapico.npop.Fingerprint.FingerprintHandler;
 
 public class DisgenetFingerprints implements FingerprintHandler {
-
-	private static final URI assertionUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/assertion");
-	private static final URI provUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/provenance");
-	private static final URI timestampPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/timestamp");
-	private static final URI disgenetGdaPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-gda");
 
 	private static final URI pav1importedOn = new URIImpl("http://purl.org/pav/importedOn");
 	private static final URI pav2importedOn = new URIImpl("http://purl.org/pav/2.0/importedOn");

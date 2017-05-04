@@ -14,7 +14,6 @@ import org.nanopub.NanopubUtils;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.petapico.npop.Fingerprint.FingerprintHandler;
 
 public class DefaultFingerprints implements FingerprintHandler {
 
