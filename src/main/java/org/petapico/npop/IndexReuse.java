@@ -181,8 +181,8 @@ public class IndexReuse {
 			if (outputStream != System.out) {
 				outputStream.close();
 			}
-			allOutputStream.flush();
 			if (allOutputStream != null) {
+				allOutputStream.flush();
 				allOutputStream.close();
 			}
 

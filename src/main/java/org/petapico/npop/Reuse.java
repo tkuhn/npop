@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,6 +49,9 @@ public class Reuse {
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -n to be set)")
 	private File outputFile;
+
+	@com.beust.jcommander.Parameter(names = "-a", description = "Output file of all nanopublications")
+	private File allOutputFile;
 
 	@com.beust.jcommander.Parameter(names = "-c", description = "Output cache file, which can afterwards be used for argument -x or to create an index)")
 	private File cacheFile;
@@ -98,7 +100,8 @@ public class Reuse {
 	private static final String matchedNanopub = "MATCHED";
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
-	private OutputStream outputStream = System.out;
+	private PrintStream outputStream = System.out;
+	private PrintStream allOutputStream;
 	private PrintStream cacheStream;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
@@ -201,9 +204,16 @@ public class Reuse {
 			} else {
 				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
 				if (outputFile.getName().endsWith(".gz")) {
-					outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
+					outputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
 				} else {
-					outputStream = new FileOutputStream(outputFile);
+					outputStream = new PrintStream(new FileOutputStream(outputFile));
+				}
+			}
+			if (allOutputFile != null) {
+				if (allOutputFile.getName().endsWith(".gz")) {
+					allOutputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(allOutputFile)));
+				} else {
+					allOutputStream = new PrintStream(new FileOutputStream(allOutputFile));
 				}
 			}
 
@@ -223,6 +233,10 @@ public class Reuse {
 			outputStream.flush();
 			if (outputStream != System.out) {
 				outputStream.close();
+			}
+			if (allOutputStream != null) {
+				allOutputStream.flush();
+				allOutputStream.close();
 			}
 			if (cacheStream != null) {
 				cacheStream.flush();
@@ -299,8 +313,11 @@ public class Reuse {
 				}
 			}
 			if (outputNew) {
-				output(np);
+				NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
 			}
+		}
+		if (allOutputStream != null) {
+			NanopubUtils.writeToStream(np, allOutputStream, rdfOutFormat);
 		}
 		if (cacheStream != null) {
 			if (addSupersedesBacklinks) {
@@ -309,10 +326,6 @@ public class Reuse {
 				cacheStream.println(uri + " " + fp);
 			}
 		}
-	}
-
-	private void output(Nanopub np) throws IOException, RDFHandlerException {
-		NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
 	}
 
 	private Nanopub addSupersedesBacklink(final Nanopub newNp, final URI oldUri)
