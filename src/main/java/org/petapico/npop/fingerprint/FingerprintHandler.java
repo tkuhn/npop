@@ -12,7 +12,6 @@ public interface FingerprintHandler {
 	public static final URI provUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/provenance");
 	public static final URI pubinfoUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/pubinfo");
 	public static final URI timestampPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/timestamp");
-	public static final URI disgenetGdaPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-gda");
 
 	public String getFingerprint(Nanopub np);
 

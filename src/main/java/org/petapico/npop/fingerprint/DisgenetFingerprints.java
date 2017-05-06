@@ -18,6 +18,8 @@ import org.openrdf.model.impl.URIImpl;
 
 public class DisgenetFingerprints implements FingerprintHandler {
 
+	public static final URI disgenetGdaPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-gda");
+
 	private static final URI pav1importedOn = new URIImpl("http://purl.org/pav/importedOn");
 	private static final URI pav2importedOn = new URIImpl("http://purl.org/pav/2.0/importedOn");
 
