@@ -54,6 +54,7 @@ public class Run {
 		addRunnableClass(Count.class, "count");
 		addRunnableClass(Decontextualize.class, "decontext");
 		addRunnableClass(Union.class, "union");
+		addRunnableClass(IndexReuse.class, "ireuse");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
