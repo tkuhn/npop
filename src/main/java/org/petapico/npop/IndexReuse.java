@@ -39,7 +39,7 @@ public class IndexReuse {
 	@com.beust.jcommander.Parameter(description = "input-nanopub-cache", required = true)
 	private List<File> inputNanopubCache = new ArrayList<File>();
 
-	@com.beust.jcommander.Parameter(names = "-x", description = "Index nanopubs to be reused (need to be sorted; no subindex supported)", required = true)
+	@com.beust.jcommander.Parameter(names = "-x", description = "Index nanopubs to be reused (need to be sorted; no subindex supported)")
 	private File reuseIndexFile;
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file of new index nanopublications")
@@ -47,6 +47,9 @@ public class IndexReuse {
 
 	@com.beust.jcommander.Parameter(names = "-a", description = "Output file of all index nanopublications")
 	private File allOutputFile;
+
+	@com.beust.jcommander.Parameter(names = "-r", description = "Append line to this table file")
+	private File tableFile;
 
 	@com.beust.jcommander.Parameter(names = "--reuse-format", description = "Format of the nanopubs to be reused: trig, nq, trix, trig.gz, ...")
 	private String reuseFormat;
@@ -90,7 +93,7 @@ public class IndexReuse {
 	private URI lastIndexUri = null;
 	private RDFFormat rdfReuseFormat, rdfOutFormat;
 	private PrintStream outputStream = System.out;
-	private PrintStream allOutputStream = null;
+	private PrintStream allOutputStream;
 	private List<String> contentNanopubList = new ArrayList<>();
 	private Map<String,Boolean> contentNanopubMap = new HashMap<>();
 	private int reuseCount;
@@ -124,7 +127,6 @@ public class IndexReuse {
 				}
 			}
 
-
 			BufferedReader br = null;
 			try {
 				br = new BufferedReader(new FileReader(inputFile));
@@ -141,31 +143,32 @@ public class IndexReuse {
 				if (br != null) br.close();
 			}
 
-			if (reuseFormat != null) {
-				rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
-			} else {
-				rdfReuseFormat = Rio.getParserFormatForFileName(reuseIndexFile.toString());
-			}
-			MultiNanopubRdfHandler.process(rdfReuseFormat, reuseIndexFile, new NanopubHandler() {
-	
-				@Override
-				public void handleNanopub(Nanopub np) {
-					try {
-						if (!reuseStopped) {
-							processIndexNanopub(np);
-						}
-					} catch (IOException ex) {
-						throw new RuntimeException(ex);
-					} catch (RDFHandlerException ex) {
-						throw new RuntimeException(ex);
-					} catch (MalformedNanopubException ex) {
-						throw new RuntimeException(ex);
-					}
+			if (reuseIndexFile != null) {
+				if (reuseFormat != null) {
+					rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
+				} else {
+					rdfReuseFormat = Rio.getParserFormatForFileName(reuseIndexFile.toString());
 				}
-	
-			});
+				MultiNanopubRdfHandler.process(rdfReuseFormat, reuseIndexFile, new NanopubHandler() {
+		
+					@Override
+					public void handleNanopub(Nanopub np) {
+						try {
+							if (!reuseStopped) {
+								processIndexNanopub(np);
+							}
+						} catch (IOException ex) {
+							throw new RuntimeException(ex);
+						} catch (RDFHandlerException ex) {
+							throw new RuntimeException(ex);
+						} catch (MalformedNanopubException ex) {
+							throw new RuntimeException(ex);
+						}
+					}
+		
+				});
+			}
 
-			System.err.println("Index reuse count: " + reuseCount);
 			indexCreator = new IndexCreator(lastIndexUri);
 
 			for (String npUri : contentNanopubList) {
@@ -181,6 +184,13 @@ public class IndexReuse {
 			allOutputStream.flush();
 			if (allOutputStream != null) {
 				allOutputStream.close();
+			}
+
+			System.err.println("Index reuse count: " + reuseCount);
+			if (tableFile != null) {
+				PrintStream st = new PrintStream(new FileOutputStream(tableFile, true));
+				st.println(inputFile.getName() + "," + reuseCount);
+				st.close();
 			}
 		}
 	}

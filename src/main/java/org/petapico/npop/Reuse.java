@@ -54,6 +54,9 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-c", description = "Output cache file, which can afterwards be used for argument -x or to create an index)")
 	private File cacheFile;
 
+	@com.beust.jcommander.Parameter(names = "-r", description = "Append line to this table file")
+	private File tableFile;
+
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
@@ -96,7 +99,7 @@ public class Reuse {
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
-	private PrintStream cacheStream = null;
+	private PrintStream cacheStream;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount, outTopicDuplCount, topicMatchErrors, topicMatchCount;
@@ -226,6 +229,17 @@ public class Reuse {
 				cacheStream.close();
 			}
 
+			System.err.println("Index reuse count: " + reuseCount);
+			if (tableFile != null) {
+				PrintStream st = new PrintStream(new FileOutputStream(tableFile, true));
+				if (addSupersedesBacklinks) {
+					st.println(inputFile.getName() + "," + reusableCount + "," + inputCount + "," + reuseCount);
+				} else {
+					st.println(inputFile.getName() + "," + reusableCount + "," + inputCount + "," + reuseCount + "," + topicMatchCount + "," +
+							inTopicDuplCount + "," + outTopicDuplCount + "," + topicMatchErrors);
+				}
+				st.close();
+			}
 			System.err.println("Older dataset count (unique): " + reusableCount + " (" + uniqueReusableCount + ")");
 			System.err.println("Newer dataset count: " + inputCount);
 			System.err.println("Reuse count: " + reuseCount);
