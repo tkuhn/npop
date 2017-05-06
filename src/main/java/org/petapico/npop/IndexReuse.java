@@ -202,7 +202,7 @@ public class IndexReuse {
 				break;
 			}
 		}
-		if (canBeReused) {
+		if (canBeReused && !npi.getElements().isEmpty()) {
 			reuseCount++;
 			outputOld(npi);
 			for (URI c : npi.getElements()) {
