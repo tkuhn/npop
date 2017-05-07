@@ -1,7 +1,9 @@
 package org.petapico.npop;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +26,9 @@ public class Count {
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs")
 	private List<File> inputNanopubs = new ArrayList<File>();
+
+	@com.beust.jcommander.Parameter(names = "-r", description = "Append line to this table file")
+	private File tableFile;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
@@ -83,18 +88,19 @@ public class Count {
 				}
 
 			});
-			System.out.println("Nanopublications: " + npCount);
-			System.out.println("Head triples: " + headCount + " (average: " + ((((float) headCount)) / npCount) + ")");
-			System.out.println("Assertion triples: " + assertionCount + " (average: " + ((((float) assertionCount)) / npCount) + ")");
-			System.out.println("Provenance triples: " + provCount + " (average: " + ((((float) provCount)) / npCount) + ")");
-			System.out.println("Pubinfo triples: " + pubinfoCount + " (average: " + ((((float) pubinfoCount)) / npCount) + ")");
-			int t = headCount + assertionCount + provCount + pubinfoCount;
-			System.out.println("Total triples: " + t + " (average: " + ((((float) t)) / npCount) + ")");
-			System.out.println();
-			System.out.println("Table:");
-			System.out.println("dataseet,nanopubs,head,assertion,provenance,pubinfo");
-			System.out.println(inputFile.getName() + "," + npCount + "," + headCount + "," + assertionCount + "," + provCount + "," + pubinfoCount);
-			System.out.println();
+			if (tableFile == null) {
+				System.out.println("Nanopublications: " + npCount);
+				System.out.println("Head triples: " + headCount + " (average: " + ((((float) headCount)) / npCount) + ")");
+				System.out.println("Assertion triples: " + assertionCount + " (average: " + ((((float) assertionCount)) / npCount) + ")");
+				System.out.println("Provenance triples: " + provCount + " (average: " + ((((float) provCount)) / npCount) + ")");
+				System.out.println("Pubinfo triples: " + pubinfoCount + " (average: " + ((((float) pubinfoCount)) / npCount) + ")");
+				int t = headCount + assertionCount + provCount + pubinfoCount;
+				System.out.println("Total triples: " + t + " (average: " + ((((float) t)) / npCount) + ")");
+			} else {
+				PrintStream st = new PrintStream(new FileOutputStream(tableFile, true));
+				st.println(inputFile.getName() + "," + npCount + "," + headCount + "," + assertionCount + "," + provCount + "," + pubinfoCount);
+				st.close();
+			}
 		}
 	}
 

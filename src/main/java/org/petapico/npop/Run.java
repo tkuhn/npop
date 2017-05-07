@@ -60,7 +60,7 @@ public class Run {
 	public static void run(String[] command) throws IOException, OpenRDFException {
 		if (command.length == 0) {
 			System.err.println("ERROR: missing command");
-			System.err.println("Run 'np help' to show all available commands.");
+			System.err.println("Run 'npop help' to show all available commands.");
 			System.exit(1);
 		}
 		String cmd = command[0];
@@ -91,7 +91,7 @@ public class Run {
 			System.exit(0);
 		} else {
 			System.err.println("ERROR. Unrecognized command: " + cmd);
-			System.err.println("Run 'np help' to show all available commands.");
+			System.err.println("Run 'npop help' to show all available commands.");
 			System.exit(1);
 		}
 	}
