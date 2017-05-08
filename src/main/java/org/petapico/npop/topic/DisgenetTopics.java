@@ -5,7 +5,7 @@ import org.nanopub.Nanopub;
 public class DisgenetTopics extends DefaultTopics {
 
 	public DisgenetTopics() {
-		super(null);
+		super("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
 	}
 
 	@Override
