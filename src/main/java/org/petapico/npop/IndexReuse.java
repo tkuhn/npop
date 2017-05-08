@@ -158,9 +158,7 @@ public class IndexReuse {
 					@Override
 					public void handleNanopub(Nanopub np) {
 						try {
-							if (!reuseStopped) {
-								processIndexNanopub(np);
-							}
+							processIndexNanopub(np);
 						} catch (IOException ex) {
 							throw new RuntimeException(ex);
 						} catch (RDFHandlerException ex) {
