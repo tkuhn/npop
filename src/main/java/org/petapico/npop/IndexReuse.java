@@ -176,7 +176,7 @@ public class IndexReuse {
 			}
 			indexCreator = new IndexCreator(previousIndexUri);
 			if (lastIndexNp != null && addSupersedesBacklinks) {
-				indexCreator.addSupersededIndex(lastIndexNp);
+				indexCreator.setSupersededIndex(lastIndexNp);
 			}
 
 			for (String npUri : contentNanopubList) {
