@@ -35,9 +35,6 @@ import com.beust.jcommander.ParameterException;
 
 public class Reuse {
 
-	public static final URI SUPERSEDES = new URIImpl("http://purl.org/nanopub/x/supersedes");
-
-
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
 
@@ -349,7 +346,7 @@ public class Reuse {
 		@Override
 		public void endRDF() throws RDFHandlerException {
 			handleStatement(new ContextStatementImpl(
-					newNp.getUri(), SUPERSEDES, oldUri, newNp.getPubinfoUri()));
+					newNp.getUri(), Nanopub.SUPERSEDES, oldUri, newNp.getPubinfoUri()));
 			super.endRDF();
 		}
 	}

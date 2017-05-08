@@ -57,6 +57,9 @@ public class IndexReuse {
 	@com.beust.jcommander.Parameter(names = "--out-format", description = "Format of the output nanopubs: trig, nq, trix, trig.gz, ...")
 	private String outFormat;
 
+	@com.beust.jcommander.Parameter(names = "-s", description = "Add npx:supersedes backlinks for changed nanopublications")
+	private boolean addSupersedesBacklinks = false;
+
 	@com.beust.jcommander.Parameter(names = "-U", description = "Base URI for index nanopubs")
 	private String baseUri = "http://purl.org/np/";
 
@@ -90,7 +93,8 @@ public class IndexReuse {
 		}
 	}
 
-	private URI lastIndexUri = null;
+	private URI previousIndexUri = null;
+	private NanopubIndex lastIndexNp;
 	private RDFFormat rdfReuseFormat, rdfOutFormat;
 	private PrintStream outputStream = System.out;
 	private PrintStream allOutputStream;
@@ -169,7 +173,13 @@ public class IndexReuse {
 				});
 			}
 
-			indexCreator = new IndexCreator(lastIndexUri);
+			if (lastIndexNp != null && lastIndexNp.isIncomplete()) {
+				throw new RuntimeException("Last index nanopub in file is not a complete index");
+			}
+			indexCreator = new IndexCreator(previousIndexUri);
+			if (lastIndexNp != null && addSupersedesBacklinks) {
+				indexCreator.addSupersededIndex(lastIndexNp);
+			}
 
 			for (String npUri : contentNanopubList) {
 				if (!contentNanopubMap.containsKey(npUri)) continue;
@@ -197,12 +207,16 @@ public class IndexReuse {
 
 	private void processIndexNanopub(Nanopub np) throws IOException, RDFHandlerException, MalformedNanopubException {
 		NanopubIndex npi = IndexUtils.castToIndex(np);
+		lastIndexNp = npi;
+		if (reuseStopped) {
+			return;
+		}
 		if (!npi.getSubIndexes().isEmpty()) {
 			throw new RuntimeException("Subindexes are not supported");
 		}
-		if (lastIndexUri == null && npi.getAppendedIndex() != null) {
+		if (previousIndexUri == null && npi.getAppendedIndex() != null) {
 			throw new RuntimeException("Starting index nanopub expected first in file");
-		} else if (lastIndexUri != null && npi.getAppendedIndex() == null) {
+		} else if (previousIndexUri != null && npi.getAppendedIndex() == null) {
 			throw new RuntimeException("Non-appending index nanopub found after first position");
 		}
 		boolean canBeReused = true;
@@ -218,7 +232,7 @@ public class IndexReuse {
 			for (URI c : npi.getElements()) {
 				contentNanopubMap.remove(c.stringValue());
 			}
-			lastIndexUri = npi.getUri();
+			previousIndexUri = npi.getUri();
 		} else {
 			reuseStopped = true;
 		}
