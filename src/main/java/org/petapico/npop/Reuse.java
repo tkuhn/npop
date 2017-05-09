@@ -252,7 +252,6 @@ public class Reuse {
 				cacheStream.close();
 			}
 
-			System.err.println("Index reuse count: " + reuseCount);
 			if (tableFile != null) {
 				PrintStream st = new PrintStream(new FileOutputStream(tableFile, true));
 				if (addSupersedesBacklinks) {
