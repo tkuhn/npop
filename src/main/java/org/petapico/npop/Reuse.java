@@ -47,9 +47,6 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -n to be set)")
 	private File outputFile;
 
-	@com.beust.jcommander.Parameter(names = "-a", description = "Output file of all nanopublications")
-	private File allOutputFile;
-
 	@com.beust.jcommander.Parameter(names = "-c", description = "Output cache file, which can afterwards be used for argument -x or to create an index)")
 	private File cacheFile;
 
@@ -98,7 +95,6 @@ public class Reuse {
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private PrintStream outputStream = System.out;
-	private PrintStream allOutputStream;
 	private PrintStream cacheStream;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
@@ -206,13 +202,6 @@ public class Reuse {
 					outputStream = new PrintStream(new FileOutputStream(outputFile));
 				}
 			}
-			if (allOutputFile != null) {
-				if (allOutputFile.getName().endsWith(".gz")) {
-					allOutputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(allOutputFile)));
-				} else {
-					allOutputStream = new PrintStream(new FileOutputStream(allOutputFile));
-				}
-			}
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
 
@@ -230,10 +219,6 @@ public class Reuse {
 			outputStream.flush();
 			if (outputStream != System.out) {
 				outputStream.close();
-			}
-			if (allOutputStream != null) {
-				allOutputStream.flush();
-				allOutputStream.close();
 			}
 			if (cacheStream != null) {
 				cacheStream.flush();
@@ -312,9 +297,6 @@ public class Reuse {
 			if (outputNew) {
 				NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
 			}
-		}
-		if (allOutputStream != null) {
-			NanopubUtils.writeToStream(np, allOutputStream, rdfOutFormat);
 		}
 		if (cacheStream != null) {
 			if (addSupersedesBacklinks) {
