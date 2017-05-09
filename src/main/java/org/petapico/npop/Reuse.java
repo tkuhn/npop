@@ -133,6 +133,9 @@ public class Reuse {
 
 
 		if (outputFile == null) {
+			if (outFormat == null) {
+				outFormat = "trig";
+			}
 			rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
 		} else {
 			rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
@@ -208,11 +211,7 @@ public class Reuse {
 			} else {
 				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
 			}
-			if (outputFile == null) {
-				if (outFormat == null) {
-					outFormat = "trig";
-				}
-			} else {
+			if (outputFile != null) {
 				if (outputFile.getName().endsWith(".gz")) {
 					outputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
 				} else {
