@@ -102,7 +102,7 @@ public class Reuse {
 	private PrintStream cacheStream;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
-	private Map<String,Nanopub> reuseNanopubMap = new HashMap<>();
+	private Map<String,String> reuseNanopubMap = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount, outTopicDuplCount, topicMatchErrors, topicMatchCount;
 	private Fingerprint fingerprint;
 	private Topic topic;
@@ -130,6 +130,13 @@ public class Reuse {
 		inTopicDuplCount = 0;
 		topicMatchCount = 0;
 		topicMatchErrors = 0;
+
+
+		if (outputFile == null) {
+			rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+		} else {
+			rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+		}
 
 		if (reuseNanopubFile == null) {
 			// Initial dataset creation
@@ -178,7 +185,7 @@ public class Reuse {
 							recordTopic(topic.getTopic(np), uri);
 						}
 						if (allOutputFile != null) {
-							reuseNanopubMap.put(fp, np);
+							reuseNanopubMap.put(fp, NanopubUtils.writeToString(np, rdfOutFormat));
 						}
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
@@ -205,9 +212,7 @@ public class Reuse {
 				if (outFormat == null) {
 					outFormat = "trig";
 				}
-				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
 			} else {
-				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
 				if (outputFile.getName().endsWith(".gz")) {
 					outputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
 				} else {
@@ -300,8 +305,7 @@ public class Reuse {
 				existingTopics.put(t, matchedNanopub);
 			}
 			if (allOutputStream != null) {
-				np = reuseNanopubMap.get(fp);
-				NanopubUtils.writeToStream(np, allOutputStream, rdfOutFormat);
+				allOutputStream.println(reuseNanopubMap.get(fp));
 			}
 		} else {
 			if (addSupersedesBacklinks) {
@@ -361,6 +365,7 @@ public class Reuse {
 					newNp.getUri(), Nanopub.SUPERSEDES, oldUri, newNp.getPubinfoUri()));
 			super.endRDF();
 		}
+
 	}
 
 }
