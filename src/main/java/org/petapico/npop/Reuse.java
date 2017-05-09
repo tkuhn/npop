@@ -47,6 +47,9 @@ public class Reuse {
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file (requires option -n to be set)")
 	private File outputFile;
 
+	@com.beust.jcommander.Parameter(names = "-a", description = "Output file of all nanopublications (-x file needs to be a full nanopub file)")
+	private File allOutputFile;
+
 	@com.beust.jcommander.Parameter(names = "-c", description = "Output cache file, which can afterwards be used for argument -x or to create an index)")
 	private File cacheFile;
 
@@ -95,9 +98,11 @@ public class Reuse {
 
 	private RDFFormat rdfInFormat, rdfReuseFormat, rdfOutFormat;
 	private PrintStream outputStream = System.out;
+	private PrintStream allOutputStream;
 	private PrintStream cacheStream;
 	private Map<String,String> reusableNanopubs = new HashMap<>();
 	private Map<String,String> existingTopics = new HashMap<>();
+	private Map<String,Nanopub> reuseNanopubMap = new HashMap<>();
 	private int reusableCount, uniqueReusableCount, inputCount, reuseCount, inTopicDuplCount, outTopicDuplCount, topicMatchErrors, topicMatchCount;
 	private Fingerprint fingerprint;
 	private Topic topic;
@@ -130,6 +135,9 @@ public class Reuse {
 			// Initial dataset creation
 		} else if (reuseNanopubFile.getName().endsWith(".txt")) {
 			// Reuse nanopubs from cache file
+			if (allOutputFile != null) {
+				throw new RuntimeException("-x needs to specify a full nanopub file if -a is specified");
+			}
 			BufferedReader br = null;
 			try {
 				br = new BufferedReader(new FileReader(reuseNanopubFile));
@@ -163,10 +171,14 @@ public class Reuse {
 				public void handleNanopub(Nanopub np) {
 					try {
 						String fp = fingerprint.getFingerprint(np);
-						reusableNanopubs.put(fp, np.getUri().toString());
+						String uri = np.getUri().toString();
+						reusableNanopubs.put(fp, uri);
 						reusableCount++;
 						if (addSupersedesBacklinks) {
-							recordTopic(topic.getTopic(np), np.getUri().toString());
+							recordTopic(topic.getTopic(np), uri);
+						}
+						if (allOutputFile != null) {
+							reuseNanopubMap.put(fp, np);
 						}
 					} catch (IOException ex) {
 						throw new RuntimeException(ex);
@@ -202,6 +214,13 @@ public class Reuse {
 					outputStream = new PrintStream(new FileOutputStream(outputFile));
 				}
 			}
+			if (allOutputFile != null) {
+				if (allOutputFile.getName().endsWith(".gz")) {
+					allOutputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(allOutputFile)));
+				} else {
+					allOutputStream = new PrintStream(new FileOutputStream(allOutputFile));
+				}
+			}
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
 
@@ -219,6 +238,10 @@ public class Reuse {
 			outputStream.flush();
 			if (outputStream != System.out) {
 				outputStream.close();
+			}
+			if (allOutputStream != null) {
+				allOutputStream.flush();
+				allOutputStream.close();
 			}
 			if (cacheStream != null) {
 				cacheStream.flush();
@@ -276,6 +299,10 @@ public class Reuse {
 				}
 				existingTopics.put(t, matchedNanopub);
 			}
+			if (allOutputStream != null) {
+				np = reuseNanopubMap.get(fp);
+				NanopubUtils.writeToStream(np, allOutputStream, rdfOutFormat);
+			}
 		} else {
 			if (addSupersedesBacklinks) {
 				if (existingTopics.containsKey(t)) {
@@ -296,6 +323,9 @@ public class Reuse {
 			}
 			if (outputNew) {
 				NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
+			}
+			if (allOutputStream != null) {
+				NanopubUtils.writeToStream(np, allOutputStream, rdfOutFormat);
 			}
 		}
 		if (cacheStream != null) {
