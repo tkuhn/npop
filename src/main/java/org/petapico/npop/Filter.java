@@ -1,11 +1,14 @@
 package org.petapico.npop;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -33,8 +36,11 @@ public class Filter {
 	@com.beust.jcommander.Parameter(names = "-f", description = "Filter by URI or literal")
 	private String filter = null;
 
-	@com.beust.jcommander.Parameter(names = "--or", description = "Treat blanks in filter string as OR connectives")
-	private boolean orFilter = false;
+	@com.beust.jcommander.Parameter(names = "-F", description = "Filter by URI or literal read from file")
+	private File filterFile = null;
+
+	@com.beust.jcommander.Parameter(names = "--split", description = "Treat blanks in filter string as OR connectives")
+	private boolean splitFilter = false;
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
@@ -65,12 +71,30 @@ public class Filter {
 
 	private RDFFormat rdfInFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
-	private String[] filterComponents;
+	private Map<String,Boolean> filterComponents;
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
-		if (orFilter) {
-			filterComponents = filter.split(" ");
+		if (splitFilter) {
+			for (String s : filter.split(" ")) {
+				filterComponents.put(s, true);
+			}
+		} else {
+			filterComponents.put(filter, true);
+		}
+		if (filterFile != null) {
+			BufferedReader br = null;
+			try {
+				br = new BufferedReader(new FileReader(filterFile));
+			    String line;
+			    while ((line = br.readLine()) != null) {
+			    	line = line.trim();
+			    	if (line.isEmpty()) continue;
+			    	filterComponents.put(line, true);
+			    }
+			} finally {
+				if (br != null) br.close();
+			}
 		}
 
 		for (File inputFile : inputNanopubs) {
@@ -114,35 +138,23 @@ public class Filter {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException {
-		if (orFilter) {
-			if (!matchesFilterComponents(np, filterComponents)) return;
-		} else if (filter != null) {
-			if (!matchesFilter(np, filter)) return;
+		if (matchesFilter(np)) {
+			NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
 		}
-		NanopubUtils.writeToStream(np, outputStream, rdfOutFormat);
 	}
 
-	private static boolean matchesFilter(Nanopub np, String filter) {
+	private boolean matchesFilter(Nanopub np) {
 		for (Statement st : NanopubUtils.getStatements(np)) {
-			if (st.getSubject().stringValue().equals(filter)) {
+			if (filterComponents.containsKey(st.getSubject().stringValue())) {
 				return true;
 			}
-			if (st.getPredicate().stringValue().equals(filter)) {
+			if (filterComponents.containsKey(st.getPredicate().stringValue())) {
 				return true;
 			}
-			if (st.getObject().stringValue().equals(filter)) {
+			if (filterComponents.containsKey(st.getObject().stringValue())) {
 				return true;
 			}
-			if (st.getContext().stringValue().equals(filter)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static boolean matchesFilterComponents(Nanopub np, String[] filterComponents) {
-		for (String f : filterComponents) {
-			if (matchesFilter(np, f)) {
+			if (filterComponents.containsKey(st.getContext().stringValue())) {
 				return true;
 			}
 		}
