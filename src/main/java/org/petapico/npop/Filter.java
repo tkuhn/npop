@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -74,7 +75,7 @@ public class Filter {
 
 	private RDFFormat rdfInFormat, rdfOutFormat;
 	private OutputStream outputStream = System.out;
-	private Map<String,Boolean> filterComponents;
+	private Map<String,Boolean> filterComponents = new HashMap<>();
 
 	private void run() throws IOException, RDFParseException, RDFHandlerException,
 			MalformedNanopubException, TrustyUriException {
