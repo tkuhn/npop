@@ -255,10 +255,10 @@ public class Reuse {
 			if (tableFile != null) {
 				PrintStream st = new PrintStream(new FileOutputStream(tableFile, true));
 				if (addSupersedesBacklinks) {
-					st.println(inputFile.getName() + "," + reusableCount + "," + inputCount + "," + reuseCount);
-				} else {
 					st.println(inputFile.getName() + "," + reusableCount + "," + inputCount + "," + reuseCount + "," + topicMatchCount + "," +
 							inTopicDuplCount + "," + outTopicDuplCount + "," + topicMatchErrors);
+				} else {
+					st.println(inputFile.getName() + "," + reusableCount + "," + inputCount + "," + reuseCount);
 				}
 				st.close();
 			}
