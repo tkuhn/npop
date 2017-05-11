@@ -18,12 +18,16 @@ public class WikipathwaysTopics implements TopicHandler {
 	public String getTopic(Nanopub np) {
 		Map<Resource,Integer> resourceCount = new HashMap<>();
 		List<String> organismNames = new ArrayList<>();
+		List<String> pathwayIds = new ArrayList<>();
 		for (Statement st : np.getAssertion()) {
 			Resource subj = st.getSubject();
 			if (subj.equals(np.getUri())) continue;
 			String ps = st.getPredicate().stringValue();
 			if (ps.equals(RDF.TYPE.stringValue())) continue;
 			if (ps.equals("http://vocabularies.wikipathways.org/wp#pathwayOntologyTag")) continue;
+			if (ps.equals("http://purl.org/dc/terms/isPartOf")) {
+				pathwayIds.add(st.getObject().stringValue().replace("http://identifiers.org/wikipathways/", ""));
+			}
 			if (ps.equals("http://vocabularies.wikipathways.org/wp#organismName")) {
 				organismNames.add(st.getObject().stringValue().replace(" ", "_"));
 			}
@@ -41,6 +45,13 @@ public class WikipathwaysTopics implements TopicHandler {
 				topic = null;
 			}
 		}
+		String pathways = "";
+		if (!pathwayIds.isEmpty()) {
+			Collections.sort(pathwayIds);
+			for (String s : pathwayIds) {
+				pathways += "|" + s;
+			}
+		}
 		String organisms = "";
 		if (!organismNames.isEmpty()) {
 			Collections.sort(organismNames);
@@ -48,7 +59,7 @@ public class WikipathwaysTopics implements TopicHandler {
 				organisms += "|" + s;
 			}
 		}
-		return topic + organisms;
+		return topic + ":" + pathways + ":" + organisms;
 	}
 
 }
