@@ -55,6 +55,7 @@ public class Run {
 		addRunnableClass(Decontextualize.class, "decontext");
 		addRunnableClass(Union.class, "union");
 		addRunnableClass(IndexReuse.class, "ireuse");
+		addRunnableClass(ExportJson.class, "exportjson");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
