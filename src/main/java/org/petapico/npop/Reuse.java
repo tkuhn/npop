@@ -2,14 +2,17 @@ package org.petapico.npop;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -143,14 +146,18 @@ public class Reuse {
 
 		if (reuseNanopubFile == null) {
 			// Initial dataset creation
-		} else if (reuseNanopubFile.getName().endsWith(".txt")) {
+		} else if (reuseNanopubFile.getName().endsWith(".txt") || reuseNanopubFile.getName().endsWith(".txt.gz")) {
 			// Reuse nanopubs from cache file
 			if (allOutputFile != null) {
 				throw new RuntimeException("-x needs to specify a full nanopub file if -a is specified");
 			}
 			BufferedReader br = null;
 			try {
-				br = new BufferedReader(new FileReader(reuseNanopubFile));
+				if (reuseNanopubFile.getName().endsWith(".gz")) {
+					br = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(reuseNanopubFile))));
+				} else {
+					br = new BufferedReader(new FileReader(reuseNanopubFile));
+				}
 			    String line;
 			    while ((line = br.readLine()) != null) {
 			    	line = line.trim();
@@ -203,7 +210,11 @@ public class Reuse {
 
 		// Reuse matching nanopubs:
 		if (cacheFile != null) {
-			cacheStream = new PrintStream(cacheFile);
+			if (cacheFile.getName().endsWith(".gz")) {
+				cacheStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(cacheFile)));
+			} else {
+				cacheStream = new PrintStream(new FileOutputStream(cacheFile));
+			}
 		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
