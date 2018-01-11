@@ -45,6 +45,13 @@
     
   </dependencies>
 
+
+  <scm>
+    <url>https://github.com/tkuhn/npop</url>
+    <connection>scm:git:git@github.com:tkuhn/npop.git</connection>
+    <developerConnection>scm:git:git@github.com:tkuhn/npop.git</developerConnection>
+  </scm>
+
   <build>
     <plugins>
       <plugin>
