@@ -16,7 +16,6 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
 
 public class WikipathwaysFingerprints implements FingerprintHandler {
 
@@ -54,21 +53,9 @@ public class WikipathwaysFingerprints implements FingerprintHandler {
 			if (isInPubinfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
 			}
-			n.add(new ContextStatementImpl((Resource) transform(subj), (URI) transform(pred), transform(obj), graphURI));
+			n.add(new ContextStatementImpl(subj, pred, obj, graphURI));
 		}
 		return n;
-	}
-
-	private Value transform(Value v) {
-		if (v instanceof URI) {
-			String s = ((URI) v).stringValue();
-			if (s.startsWith("http://www.wikipathways.org/instance/WP")) {
-				s.replaceFirst("^(http://www.wikipathways.org/instance/WP[0-9]*)_r[0-9]*$", "$1");
-				System.err.println(s);
-				return new URIImpl(s);
-			}
-		}
-		return v;
 	}
 
 }
