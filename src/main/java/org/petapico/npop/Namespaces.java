@@ -90,16 +90,16 @@ public class Namespaces {
 		if (inputNanopubs == null || inputNanopubs.isEmpty()) {
 			throw new ParameterException("No input files given");
 		}
+		headWriter = makeWriter(headOutputFile);
+		assertionWriter = makeWriter(assertionOutputFile);
+		provWriter = makeWriter(provOutputFile);
+		pubinfoWriter = makeWriter(pubinfoOutputFile);
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
 				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
 			} else {
 				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
 			}
-			headWriter = makeWriter(headOutputFile);
-			assertionWriter = makeWriter(assertionOutputFile);
-			provWriter = makeWriter(provOutputFile);
-			pubinfoWriter = makeWriter(pubinfoOutputFile);
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
 
@@ -116,11 +116,11 @@ public class Namespaces {
 
 			});
 
-			closeWriter(headWriter);
-			closeWriter(assertionWriter);
-			closeWriter(provWriter);
-			closeWriter(pubinfoWriter);
 		}
+		closeWriter(headWriter);
+		closeWriter(assertionWriter);
+		closeWriter(provWriter);
+		closeWriter(pubinfoWriter);
 	}
 
 	public void process(Nanopub np) throws RDFHandlerException, IOException {
