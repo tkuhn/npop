@@ -56,6 +56,7 @@ public class Run {
 		addRunnableClass(Union.class, "union");
 		addRunnableClass(IndexReuse.class, "ireuse");
 		addRunnableClass(ExportJson.class, "exportjson");
+		addRunnableClass(Namespaces.class, "namespaces");
 	}
 
 	public static void run(String[] command) throws IOException, OpenRDFException {
