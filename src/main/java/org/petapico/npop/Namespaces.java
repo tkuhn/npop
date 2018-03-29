@@ -47,6 +47,15 @@ public class Namespaces {
 	@com.beust.jcommander.Parameter(names = "-i", description = "Output file for namespaces used in pub info graph")
 	private File pubinfoOutputFile;
 
+	@com.beust.jcommander.Parameter(names = "--subj", description = "Include subject URIs")
+	private boolean includeSubject;
+
+	@com.beust.jcommander.Parameter(names = "--pred", description = "Include predicate URIs")
+	private boolean includePredicate;
+
+	@com.beust.jcommander.Parameter(names = "--obj", description = "Include object URIs")
+	private boolean includeObject;
+
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
 
@@ -83,6 +92,11 @@ public class Namespaces {
 	private BufferedWriter headWriter, assertionWriter, provWriter, pubinfoWriter;
 
 	private void init() {
+		if (!includeSubject && !includePredicate && !includeObject) {
+			includeSubject = true;
+			includePredicate = true;
+			includeObject = true;
+		}
 	}
 
 	public void run() throws IOException, RDFParseException, RDFHandlerException,
@@ -134,7 +148,15 @@ public class Namespaces {
 		if (w == null) return;
 		Set<String> namespaces = new HashSet<>();
 		for (Statement st : statements) {
-			namespaces.add(getNamespace(st.getPredicate()));
+			if (includeSubject && st.getSubject() instanceof URI) {
+				namespaces.add(getNamespace((URI) st.getSubject()));
+			}
+			if (includePredicate) {
+				namespaces.add(getNamespace(st.getPredicate()));
+			}
+			if (includeObject && st.getObject() instanceof URI) {
+				namespaces.add(getNamespace((URI) st.getObject()));
+			}
 		}
 		for (String n : namespaces) {
 			w.write(n + "\n");
