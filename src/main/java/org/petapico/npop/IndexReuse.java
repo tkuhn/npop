@@ -2,14 +2,17 @@ package org.petapico.npop;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import net.trustyuri.TrustyUriException;
@@ -133,7 +136,11 @@ public class IndexReuse {
 
 			BufferedReader br = null;
 			try {
-				br = new BufferedReader(new FileReader(inputFile));
+				if (inputFile.getName().endsWith(".gz")) {
+					br = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(inputFile))));
+				} else {
+					br = new BufferedReader(new FileReader(inputFile));
+				}
 			    String line;
 			    while ((line = br.readLine()) != null) {
 			    	line = line.trim();
