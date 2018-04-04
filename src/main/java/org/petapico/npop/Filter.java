@@ -24,6 +24,11 @@ import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubUtils;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.model.impl.StatementImpl;
+import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -48,6 +53,12 @@ public class Filter {
 
 	@com.beust.jcommander.Parameter(names = "-o", description = "Output file")
 	private File outputFile;
+
+	@com.beust.jcommander.Parameter(names = "--no-examples", description = "Do not output example nanopublications")
+	private boolean noExamples = false;
+
+	@com.beust.jcommander.Parameter(names = "--only-examples", description = "Output only example nanopublications")
+	private boolean onlyExamples = false;
 
 	@com.beust.jcommander.Parameter(names = "--in-format", description = "Format of the input nanopubs: trig, nq, trix, trig.gz, ...")
 	private String inFormat;
@@ -104,6 +115,9 @@ public class Filter {
 				if (br != null) br.close();
 			}
 		}
+		if (filter == null && filterFile == null) {
+			filterComponents = null;
+		}
 
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
@@ -152,6 +166,13 @@ public class Filter {
 	}
 
 	private boolean matchesFilter(Nanopub np) {
+		if (noExamples && isExampleNanopub(np)) {
+			return false;
+		}
+		if (onlyExamples && !isExampleNanopub(np)) {
+			return false;
+		}
+		if (filterComponents == null) return true;
 		for (Statement st : NanopubUtils.getStatements(np)) {
 			if (filterComponents.containsKey(st.getSubject().stringValue())) {
 				return true;
@@ -166,6 +187,30 @@ public class Filter {
 				return true;
 			}
 		}
+		return false;
+	}
+
+
+	public static URI exampleNanopubType = new URIImpl("http://purl.org/nanopub/x/ExampleNanopub");
+
+	public static boolean isExampleNanopub(Nanopub np) {
+		if (np.getPubinfo().contains(new StatementImpl(np.getUri(), RDF.TYPE, exampleNanopubType))) {
+			return true;
+		}
+		for (Statement st : NanopubUtils.getStatements(np)) {
+			if (isExampleUri(st.getSubject())) return true;
+			if (isExampleUri(st.getPredicate())) return true;
+			if (isExampleUri(st.getObject())) return true;
+		}
+		return false;
+	}
+
+	public static boolean isExampleUri(Value v) {
+		if (!(v instanceof URI)) return false;
+		if (v.stringValue().startsWith("http://example.org/")) return true;
+		if (v.stringValue().startsWith("https://example.org/")) return true;
+		if (v.stringValue().startsWith("http://example.com/")) return true;
+		if (v.stringValue().startsWith("https://example.com/")) return true;
 		return false;
 	}
 
