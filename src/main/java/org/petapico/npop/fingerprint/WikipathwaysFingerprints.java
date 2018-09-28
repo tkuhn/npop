@@ -53,6 +53,9 @@ public class WikipathwaysFingerprints implements FingerprintHandler {
 			if (isInPubinfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
 			}
+			if (isInPubinfo && subj.equals(np.getUri()) && pred.equals(Nanopub.SUPERSEDES)) {
+				continue;
+			}
 			n.add(new ContextStatementImpl(subj, pred, obj, graphURI));
 		}
 		return n;

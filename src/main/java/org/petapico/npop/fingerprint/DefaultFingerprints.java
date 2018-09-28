@@ -54,6 +54,9 @@ public class DefaultFingerprints implements FingerprintHandler {
 			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
 			}
+			if (isInPubInfo && subj.equals(np.getUri()) && pred.equals(Nanopub.SUPERSEDES)) {
+				continue;
+			}
 			n.add(st);
 		}
 		return n;
