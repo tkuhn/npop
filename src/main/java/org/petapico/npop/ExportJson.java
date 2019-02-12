@@ -10,24 +10,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.openrdf.model.Literal;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class ExportJson {
 
@@ -68,9 +68,9 @@ public class ExportJson {
 			MalformedNanopubException, TrustyUriException {
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 			if (outputFile != null) {
 				if (outputFile.getName().endsWith(".gz")) {
@@ -109,7 +109,7 @@ public class ExportJson {
 	}
 
 	private void process(Nanopub np) throws RDFHandlerException, IOException {
-		URI npUri = np.getUri();
+		IRI npUri = np.getUri();
 		if (!isFirstNp) {
 			writer.write(",\n");
 		}
@@ -128,7 +128,7 @@ public class ExportJson {
 		writer.write("\n ]");
 	}
 
-	private void writeStatement(Statement st, String type, URI graphUri, URI npUri) throws RDFHandlerException, IOException {
+	private void writeStatement(Statement st, String type, IRI graphUri, IRI npUri) throws RDFHandlerException, IOException {
 		if (!isFirstSt) {
 			writer.write(",\n");
 		}

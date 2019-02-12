@@ -7,18 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.rdf4j.RDF4JException;
+import org.eclipse.rdf4j.rio.RDFParserRegistry;
+import org.eclipse.rdf4j.rio.RDFWriterRegistry;
+import org.eclipse.rdf4j.rio.turtle.TurtleParserFactory;
+import org.eclipse.rdf4j.rio.turtle.TurtleWriterFactory;
 import org.nanopub.NanopubImpl;
-import org.openrdf.OpenRDFException;
-import org.openrdf.rio.RDFParserRegistry;
-import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.rio.turtle.TurtleParserFactory;
-import org.openrdf.rio.turtle.TurtleWriterFactory;
 
 public class Run {
 
 	private Run() {}  // no instances allowed
 
-	public static void main(String[] args) throws IOException, OpenRDFException {
+	public static void main(String[] args) throws IOException, RDF4JException {
 		NanopubImpl.ensureLoaded();
 		
 		// Not sure why this isnt' done automatically...:
@@ -60,7 +60,7 @@ public class Run {
 		addRunnableClass(Aggregate.class, "aggregate");
 	}
 
-	public static void run(String[] command) throws IOException, OpenRDFException {
+	public static void run(String[] command) throws IOException, RDF4JException {
 		if (command.length == 0) {
 			System.err.println("ERROR: missing command");
 			System.err.println("Run 'npop help' to show all available commands.");

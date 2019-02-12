@@ -13,22 +13,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class Namespaces {
 
@@ -110,9 +110,9 @@ public class Namespaces {
 		pubinfoWriter = makeWriter(pubinfoOutputFile);
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
@@ -148,14 +148,14 @@ public class Namespaces {
 		if (w == null) return;
 		Set<String> namespaces = new HashSet<>();
 		for (Statement st : statements) {
-			if (includeSubject && st.getSubject() instanceof URI) {
-				namespaces.add(getNamespace((URI) st.getSubject()));
+			if (includeSubject && st.getSubject() instanceof IRI) {
+				namespaces.add(getNamespace((IRI) st.getSubject()));
 			}
 			if (includePredicate) {
 				namespaces.add(getNamespace(st.getPredicate()));
 			}
-			if (includeObject && st.getObject() instanceof URI) {
-				namespaces.add(getNamespace((URI) st.getObject()));
+			if (includeObject && st.getObject() instanceof IRI) {
+				namespaces.add(getNamespace((IRI) st.getObject()));
 			}
 		}
 		for (String n : namespaces) {
@@ -163,7 +163,7 @@ public class Namespaces {
 		}
 	}
 
-	private String getNamespace(URI uri) {
+	private String getNamespace(IRI uri) {
 		return uri.toString().replaceFirst("[A-Za-z0-9_.-]*.$", "");
 	}
 

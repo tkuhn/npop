@@ -15,21 +15,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -102,9 +102,9 @@ public class Aggregate {
 		if (pubinfoOutputFile != null) pubinfoCounts = new HashMap<>();
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 
 			MultiNanopubRdfHandler.process(rdfInFormat, inputFile, new NanopubHandler() {
@@ -150,19 +150,21 @@ public class Aggregate {
 
 	private Statement preprocessStatement(Statement st, Nanopub np) {
 		Resource subject = st.getSubject();
-		URI predicate = st.getPredicate();
+		IRI predicate = st.getPredicate();
 		Value object = st.getObject();
 		subject = (Resource) preprocessValue(subject, np);
-		predicate = (URI) preprocessValue(predicate, np);
+		predicate = (IRI) preprocessValue(predicate, np);
 		object = preprocessValue(object, np);
-		return new StatementImpl(subject, predicate, object);
+		return vf.createStatement(subject, predicate, object);
 	}
 
-	private static final URI thisNanopub = new URIImpl("http://example.org/npop-dummy-uri/this_nanopub");
-	private static final URI thisHead = new URIImpl("http://example.org/npop-dummy-uri/this_head");
-	private static final URI thisAssertion = new URIImpl("http://example.org/npop-dummy-uri/this_assertion");
-	private static final URI thisProvenance = new URIImpl("thttp://example.org/npop-dummy-uri/his_provenance");
-	private static final URI thisPubinfo = new URIImpl("http://example.org/npop-dummy-uri/this_pubinfo");
+	private static ValueFactory vf = SimpleValueFactory.getInstance();
+
+	private static final IRI thisNanopub = vf.createIRI("http://example.org/npop-dummy-uri/this_nanopub");
+	private static final IRI thisHead = vf.createIRI("http://example.org/npop-dummy-uri/this_head");
+	private static final IRI thisAssertion = vf.createIRI("http://example.org/npop-dummy-uri/this_assertion");
+	private static final IRI thisProvenance = vf.createIRI("thttp://example.org/npop-dummy-uri/his_provenance");
+	private static final IRI thisPubinfo = vf.createIRI("http://example.org/npop-dummy-uri/this_pubinfo");
 
 	private Value preprocessValue(Value v, Nanopub np) {
 		if (np.getUri().equals(v)) {

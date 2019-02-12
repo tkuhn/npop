@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.nanopub.Nanopub;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.petapico.npop.Topic.TopicHandler;
 
 public class WikipathwaysTopics implements TopicHandler {

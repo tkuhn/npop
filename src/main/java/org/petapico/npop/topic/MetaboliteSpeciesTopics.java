@@ -1,8 +1,8 @@
 package org.petapico.npop.topic;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Statement;
 import org.nanopub.Nanopub;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 import org.petapico.npop.Topic.TopicHandler;
 
 public class MetaboliteSpeciesTopics implements TopicHandler {
@@ -33,7 +33,7 @@ public class MetaboliteSpeciesTopics implements TopicHandler {
 	private String getPart2(Nanopub np) {
 		for (Statement st : np.getProvenance()) {
 			if (st.getPredicate().stringValue().equals("http://semanticscience.org/resource/SIO_000253")) {
-				if (!(st.getObject() instanceof URI)) continue;
+				if (!(st.getObject() instanceof IRI)) continue;
 				if (st.getObject().stringValue().equals("http://www.wikidata.org/entity/Q2013")) continue;
 				return st.getObject().stringValue();
 			}

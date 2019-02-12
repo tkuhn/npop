@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.nanopub.Nanopub;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
 import org.petapico.npop.Topic.TopicHandler;
 
 public class DefaultTopics implements TopicHandler {

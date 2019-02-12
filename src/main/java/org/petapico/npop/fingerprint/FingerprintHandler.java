@@ -1,17 +1,17 @@
 package org.petapico.npop.fingerprint;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.nanopub.Nanopub;
-import org.openrdf.model.URI;
-import org.openrdf.model.impl.URIImpl;
 
 public interface FingerprintHandler {
 
-	public static final URI nanopubUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/nanopuburi");
-	public static final URI headUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/head");
-	public static final URI assertionUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/assertion");
-	public static final URI provUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/provenance");
-	public static final URI pubinfoUriPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/pubinfo");
-	public static final URI timestampPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/timestamp");
+	public static final IRI nanopubUriPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/nanopuburi");
+	public static final IRI headUriPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/head");
+	public static final IRI assertionUriPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/assertion");
+	public static final IRI provUriPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/provenance");
+	public static final IRI pubinfoUriPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/pubinfo");
+	public static final IRI timestampPlaceholder = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/timestamp");
 
 	public String getFingerprint(Nanopub np);
 

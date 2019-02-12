@@ -15,8 +15,12 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
@@ -25,16 +29,11 @@ import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubRdfHandler;
 import org.nanopub.NanopubUtils;
 import org.nanopub.trusty.FixTrustyNanopub;
-import org.openrdf.model.URI;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class Reuse {
 
@@ -139,9 +138,9 @@ public class Reuse {
 			if (outFormat == null) {
 				outFormat = "trig";
 			}
-			rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+			rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat).orElse(null);
 		} else {
-			rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+			rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName()).orElse(null);
 		}
 
 		if (reuseNanopubFile == null) {
@@ -178,9 +177,9 @@ public class Reuse {
 		} else {
 			// Reuse nanopubs from full nanopub file
 			if (reuseFormat != null) {
-				rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
+				rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat).orElse(null);
 			} else {
-				rdfReuseFormat = Rio.getParserFormatForFileName(reuseNanopubFile.toString());
+				rdfReuseFormat = Rio.getParserFormatForFileName(reuseNanopubFile.toString()).orElse(null);
 			}
 			MultiNanopubRdfHandler.process(rdfReuseFormat, reuseNanopubFile, new NanopubHandler() {
 	
@@ -218,9 +217,9 @@ public class Reuse {
 		}
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 			if (outputFile != null) {
 				if (outputFile.getName().endsWith(".gz")) {
@@ -329,7 +328,7 @@ public class Reuse {
 						topicMatchCount++;
 						String oldNpUri = existingTopics.get(t);
 						existingTopics.put(t, matchedNanopub);
-						np = addSupersedesBacklink(np, new URIImpl(oldNpUri));
+						np = addSupersedesBacklink(np, SimpleValueFactory.getInstance().createIRI(oldNpUri));
 						uri = np.getUri().toString();
 					}
 				}
@@ -350,7 +349,7 @@ public class Reuse {
 		}
 	}
 
-	private Nanopub addSupersedesBacklink(final Nanopub newNp, final URI oldUri)
+	private Nanopub addSupersedesBacklink(final Nanopub newNp, final IRI oldUri)
 			throws RDFHandlerException, MalformedNanopubException, TrustyUriException {
 		SupersedesLinkAdder linkAdder = new SupersedesLinkAdder(oldUri, newNp);
 		NanopubUtils.propagateToHandler(newNp, linkAdder);
@@ -360,17 +359,17 @@ public class Reuse {
 	
 	private class SupersedesLinkAdder extends NanopubRdfHandler {
 
-		private URI oldUri;
+		private IRI oldUri;
 		private Nanopub newNp;
 
-		public SupersedesLinkAdder(URI oldUri, Nanopub newNp) {
+		public SupersedesLinkAdder(IRI oldUri, Nanopub newNp) {
 			this.oldUri = oldUri;
 			this.newNp = newNp;
 		}
 
 		@Override
 		public void endRDF() throws RDFHandlerException {
-			handleStatement(new ContextStatementImpl(
+			handleStatement(SimpleValueFactory.getInstance().createStatement(
 					newNp.getUri(), Nanopub.SUPERSEDES, oldUri, newNp.getPubinfoUri()));
 			super.endRDF();
 		}

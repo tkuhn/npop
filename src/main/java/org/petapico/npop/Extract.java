@@ -10,23 +10,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.RDFWriter;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
-import org.openrdf.model.Statement;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFWriter;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class Extract {
 
@@ -83,17 +83,17 @@ public class Extract {
 			MalformedNanopubException, TrustyUriException {
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 			if (outputFile == null) {
 				if (outFormat == null) {
 					outFormat = "trig";
 				}
-				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat).orElse(null);
 			} else {
-				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName()).orElse(null);
 				if (outputFile.getName().endsWith(".gz")) {
 					outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
 				} else {
@@ -151,7 +151,7 @@ public class Extract {
 
 	private void outputStatement(Statement st) throws RDFHandlerException {
 		if (dropGraphs) {
-			st = new StatementImpl(st.getSubject(), st.getPredicate(), st.getObject());
+			st = SimpleValueFactory.getInstance().createStatement(st.getSubject(), st.getPredicate(), st.getObject());
 		}
 		writer.handleStatement(st);
 	}

@@ -3,25 +3,27 @@ package org.petapico.npop.fingerprint;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.nanopub.Nanopub;
+import org.nanopub.NanopubUtils;
+
 import net.trustyuri.TrustyUriUtils;
 import net.trustyuri.rdf.RdfHasher;
 import net.trustyuri.rdf.RdfPreprocessor;
 
-import org.nanopub.Nanopub;
-import org.nanopub.NanopubUtils;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
-
 public class DisgenetFingerprints implements FingerprintHandler {
 
-	public static final URI disgenetGdaPlaceholder = new URIImpl("http://purl.org/nanopub/placeholders/disgenet-gda");
+	private static ValueFactory vf = SimpleValueFactory.getInstance();
 
-	private static final URI pav1importedOn = new URIImpl("http://purl.org/pav/importedOn");
-	private static final URI pav2importedOn = new URIImpl("http://purl.org/pav/2.0/importedOn");
+	public static final IRI disgenetGdaPlaceholder = vf.createIRI("http://purl.org/nanopub/placeholders/disgenet-gda");
+
+	private static final IRI pav1importedOn = vf.createIRI("http://purl.org/pav/importedOn");
+	private static final IRI pav2importedOn = vf.createIRI("http://purl.org/pav/2.0/importedOn");
 
 	@Override
 	public String getFingerprint(Nanopub np) {
@@ -42,14 +44,14 @@ public class DisgenetFingerprints implements FingerprintHandler {
 			boolean isInAssertion = st.getContext().equals(np.getAssertionUri());
 			boolean isInProvenance = st.getContext().equals(np.getProvenanceUri());
 			if (!isInProvenance && !isInAssertion) continue;
-			URI graphURI;
+			IRI graphURI;
 			if (isInAssertion) {
 				graphURI = assertionUriPlaceholder;
 			} else {
 				graphURI = provUriPlaceholder;
 			}
 			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
+			IRI pred = st.getPredicate();
 			Value obj = st.getObject();
 			if (isInAssertion) {
 				String subjS = subj.stringValue();
@@ -66,24 +68,24 @@ public class DisgenetFingerprints implements FingerprintHandler {
 					subj = assertionUriPlaceholder;
 				}
 			}
-			n.add(new ContextStatementImpl((Resource) transform(subj), (URI) transform(pred), transform(obj), graphURI));
+			n.add(vf.createStatement((Resource) transform(subj), (IRI) transform(pred), transform(obj), graphURI));
 		}
 		return n;
 	}
 
 	private Value transform(Value v) {
-		if (v instanceof URI) {
-			String s = ((URI) v).stringValue();
+		if (v instanceof IRI) {
+			String s = ((IRI) v).stringValue();
 			if (s.matches("http://rdf.disgenet.org/v.*/void.*")) {
 				if (s.matches("http://rdf.disgenet.org/v.*/void.*-20[0-9]*")) {
 					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)(.*)-20[0-9]*$", "http://rdf.disgenet.org/vx.x.x/void/$2");
-					return new URIImpl(r);
+					return vf.createIRI(r);
 				} else {
 					String r = s.replaceFirst("^http://rdf.disgenet.org/v.*/void.*(/|#)", "http://rdf.disgenet.org/vx.x.x/void/");
-					return new URIImpl(r);
+					return vf.createIRI(r);
 				}
 			} else if (s.startsWith("http://purl.obolibrary.org/obo/eco.owl#")) {
-				return new URIImpl(s.replace("http://purl.obolibrary.org/obo/eco.owl#", "http://purl.obolibrary.org/obo/"));
+				return vf.createIRI(s.replace("http://purl.obolibrary.org/obo/eco.owl#", "http://purl.obolibrary.org/obo/"));
 			}
 		}
 		return v;

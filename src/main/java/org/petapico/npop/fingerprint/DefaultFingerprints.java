@@ -5,15 +5,15 @@ import static org.nanopub.SimpleTimestampPattern.isCreationTimeProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.nanopub.Nanopub;
+import org.nanopub.NanopubUtils;
+
 import net.trustyuri.TrustyUriUtils;
 import net.trustyuri.rdf.RdfHasher;
 import net.trustyuri.rdf.RdfPreprocessor;
-
-import org.nanopub.Nanopub;
-import org.nanopub.NanopubUtils;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
 
 public class DefaultFingerprints implements FingerprintHandler {
 
@@ -50,7 +50,7 @@ public class DefaultFingerprints implements FingerprintHandler {
 			boolean isInPubInfo = st.getContext().equals(np.getPubinfoUri());
 			if (isInPubInfo && ignorePubinfo) continue;
 			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
+			IRI pred = st.getPredicate();
 			if (isInPubInfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
 			}

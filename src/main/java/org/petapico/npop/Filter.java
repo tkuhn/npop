@@ -15,27 +15,26 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubUtils;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class Filter {
 
@@ -121,17 +120,17 @@ public class Filter {
 
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 			if (outputFile == null) {
 				if (outFormat == null) {
 					outFormat = "trig";
 				}
-				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat).orElse(null);
 			} else {
-				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName()).orElse(null);
 				if (outputFile.getName().endsWith(".gz")) {
 					outputStream = new GZIPOutputStream(new FileOutputStream(outputFile));
 				} else {
@@ -191,10 +190,10 @@ public class Filter {
 	}
 
 
-	public static URI exampleNanopubType = new URIImpl("http://purl.org/nanopub/x/ExampleNanopub");
+	public static IRI exampleNanopubType = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/x/ExampleNanopub");
 
 	public static boolean isExampleNanopub(Nanopub np) {
-		if (np.getPubinfo().contains(new StatementImpl(np.getUri(), RDF.TYPE, exampleNanopubType))) {
+		if (np.getPubinfo().contains(SimpleValueFactory.getInstance().createStatement(np.getUri(), RDF.TYPE, exampleNanopubType))) {
 			return true;
 		}
 		for (Statement st : NanopubUtils.getStatements(np)) {
@@ -206,7 +205,7 @@ public class Filter {
 	}
 
 	public static boolean isExampleUri(Value v) {
-		if (!(v instanceof URI)) return false;
+		if (!(v instanceof IRI)) return false;
 		if (v.stringValue().startsWith("http://example.org/")) return true;
 		if (v.stringValue().startsWith("https://example.org/")) return true;
 		if (v.stringValue().startsWith("http://example.com/")) return true;

@@ -5,17 +5,17 @@ import static org.nanopub.SimpleTimestampPattern.isCreationTimeProperty;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.nanopub.Nanopub;
+import org.nanopub.NanopubUtils;
+
 import net.trustyuri.TrustyUriUtils;
 import net.trustyuri.rdf.RdfHasher;
 import net.trustyuri.rdf.RdfPreprocessor;
-
-import org.nanopub.Nanopub;
-import org.nanopub.NanopubUtils;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ContextStatementImpl;
 
 public class WikipathwaysFingerprints implements FingerprintHandler {
 
@@ -39,7 +39,7 @@ public class WikipathwaysFingerprints implements FingerprintHandler {
 			boolean isInProvenance = st.getContext().equals(np.getProvenanceUri());
 			boolean isInPubinfo = st.getContext().equals(np.getPubinfoUri());
 			if (!isInProvenance && !isInAssertion && !isInPubinfo) continue;
-			URI graphURI;
+			IRI graphURI;
 			if (isInAssertion) {
 				graphURI = assertionUriPlaceholder;
 			} else if (isInProvenance) {
@@ -48,7 +48,7 @@ public class WikipathwaysFingerprints implements FingerprintHandler {
 				graphURI = pubinfoUriPlaceholder;
 			}
 			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
+			IRI pred = st.getPredicate();
 			Value obj = st.getObject();
 			if (isInPubinfo && subj.equals(np.getUri()) && isCreationTimeProperty(pred)) {
 				continue;
@@ -56,7 +56,7 @@ public class WikipathwaysFingerprints implements FingerprintHandler {
 			if (isInPubinfo && subj.equals(np.getUri()) && pred.equals(Nanopub.SUPERSEDES)) {
 				continue;
 			}
-			n.add(new ContextStatementImpl(subj, pred, obj, graphURI));
+			n.add(SimpleValueFactory.getInstance().createStatement(subj, pred, obj, graphURI));
 		}
 		return n;
 	}

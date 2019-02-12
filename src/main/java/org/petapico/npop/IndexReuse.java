@@ -15,8 +15,12 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
@@ -27,15 +31,11 @@ import org.nanopub.extra.index.IndexUtils;
 import org.nanopub.extra.index.NanopubIndex;
 import org.nanopub.extra.index.NanopubIndexCreator;
 import org.nanopub.extra.index.SimpleIndexCreator;
-import org.openrdf.model.URI;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.Rio;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
+
+import net.trustyuri.TrustyUriException;
 
 public class IndexReuse {
 
@@ -96,7 +96,7 @@ public class IndexReuse {
 		}
 	}
 
-	private URI previousIndexUri = null;
+	private IRI previousIndexUri = null;
 	private NanopubIndex lastIndexNp;
 	private RDFFormat rdfReuseFormat, rdfOutFormat;
 	private PrintStream outputStream = System.out;
@@ -117,9 +117,9 @@ public class IndexReuse {
 				if (outFormat == null) {
 					outFormat = "trig";
 				}
-				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat);
+				rdfOutFormat = Rio.getParserFormatForFileName("file." + outFormat).orElse(null);
 			} else {
-				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName());
+				rdfOutFormat = Rio.getParserFormatForFileName(outputFile.getName()).orElse(null);
 				if (outputFile.getName().endsWith(".gz")) {
 					outputStream = new PrintStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
 				} else {
@@ -156,9 +156,9 @@ public class IndexReuse {
 
 			if (reuseIndexFile != null) {
 				if (reuseFormat != null) {
-					rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat);
+					rdfReuseFormat = Rio.getParserFormatForFileName("file." + reuseFormat).orElse(null);
 				} else {
-					rdfReuseFormat = Rio.getParserFormatForFileName(reuseIndexFile.toString());
+					rdfReuseFormat = Rio.getParserFormatForFileName(reuseIndexFile.toString()).orElse(null);
 				}
 				MultiNanopubRdfHandler.process(rdfReuseFormat, reuseIndexFile, new NanopubHandler() {
 		
@@ -188,7 +188,7 @@ public class IndexReuse {
 
 			for (String npUri : contentNanopubList) {
 				if (!contentNanopubMap.containsKey(npUri)) continue;
-				indexCreator.addElement(new URIImpl(npUri));
+				indexCreator.addElement(SimpleValueFactory.getInstance().createIRI(npUri));
 			}
 			indexCreator.finalizeNanopub();
 
@@ -225,7 +225,7 @@ public class IndexReuse {
 			throw new RuntimeException("Non-appending index nanopub found after first position");
 		}
 		boolean canBeReused = true;
-		for (URI c : npi.getElements()) {
+		for (IRI c : npi.getElements()) {
 			if (!contentNanopubMap.containsKey(c.stringValue())) {
 				canBeReused = false;
 				break;
@@ -234,7 +234,7 @@ public class IndexReuse {
 		if (canBeReused && !npi.getElements().isEmpty()) {
 			reuseCount++;
 			outputOld(npi);
-			for (URI c : npi.getElements()) {
+			for (IRI c : npi.getElements()) {
 				contentNanopubMap.remove(c.stringValue());
 			}
 			previousIndexUri = npi.getUri();
@@ -267,7 +267,7 @@ public class IndexReuse {
 
 	private class IndexCreator extends SimpleIndexCreator {
 
-		public IndexCreator(URI previousIndexUri) {
+		public IndexCreator(IRI previousIndexUri) {
 			super(previousIndexUri);
 
 			setBaseUri(baseUri);
@@ -281,7 +281,7 @@ public class IndexReuse {
 				addCreator(creator);
 			}
 			for (String sa : seeAlso) {
-				addSeeAlsoUri(new URIImpl(sa));
+				addSeeAlsoUri(SimpleValueFactory.getInstance().createIRI(sa));
 			}
 		}
 

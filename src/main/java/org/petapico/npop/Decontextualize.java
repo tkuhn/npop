@@ -10,33 +10,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
-import net.trustyuri.TrustyUriException;
-
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.RDFWriter;
+import org.eclipse.rdf4j.rio.Rio;
 import org.nanopub.MalformedNanopubException;
 import org.nanopub.MultiNanopubRdfHandler;
 import org.nanopub.MultiNanopubRdfHandler.NanopubHandler;
 import org.nanopub.Nanopub;
 import org.nanopub.NanopubImpl;
 import org.nanopub.NanopubUtils;
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFWriter;
-import org.openrdf.rio.Rio;
 import org.petapico.npop.fingerprint.FingerprintHandler;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
+import net.trustyuri.TrustyUriException;
+
 public class Decontextualize {
 
-	public static final URI graphPlaceholer = new URIImpl("http://purl.org/nanopub/placeholders/graph");
+	public static final IRI graphPlaceholer = SimpleValueFactory.getInstance().createIRI("http://purl.org/nanopub/placeholders/graph");
 
 	@com.beust.jcommander.Parameter(description = "input-nanopubs", required = true)
 	private List<File> inputNanopubs = new ArrayList<File>();
@@ -73,9 +72,9 @@ public class Decontextualize {
 			MalformedNanopubException, TrustyUriException {
 		for (File inputFile : inputNanopubs) {
 			if (inFormat != null) {
-				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat);
+				rdfInFormat = Rio.getParserFormatForFileName("file." + inFormat).orElse(null);
 			} else {
-				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString());
+				rdfInFormat = Rio.getParserFormatForFileName(inputFile.toString()).orElse(null);
 			}
 			if (outputFile != null) {
 				if (outputFile.getName().endsWith(".gz")) {
@@ -123,8 +122,8 @@ public class Decontextualize {
 			if (isInHead) continue;
 			boolean isInProvenance = st.getContext().equals(np.getProvenanceUri());
 			boolean isInPubinfo = st.getContext().equals(np.getPubinfoUri());
-			URI toBeReplacedUri = null;
-			URI replacementUri = null;
+			IRI toBeReplacedUri = null;
+			IRI replacementUri = null;
 			if (isInProvenance) {
 				toBeReplacedUri = np.getAssertionUri();
 				replacementUri = FingerprintHandler.assertionUriPlaceholder;
@@ -133,18 +132,18 @@ public class Decontextualize {
 				replacementUri = FingerprintHandler.nanopubUriPlaceholder;
 			}
 			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
+			IRI pred = st.getPredicate();
 			Value obj = st.getObject();
-			n.add(new ContextStatementImpl(
+			n.add(SimpleValueFactory.getInstance().createStatement(
 					(Resource) transform(subj, toBeReplacedUri, replacementUri),
-					(URI) transform(pred, toBeReplacedUri, replacementUri),
+					(IRI) transform(pred, toBeReplacedUri, replacementUri),
 					transform(obj, toBeReplacedUri, replacementUri),
 					graphPlaceholer));
 		}
 		return n;
 	}
 
-	private Value transform(Value v, URI toBeReplacedUri, URI replacementUri) {
+	private Value transform(Value v, IRI toBeReplacedUri, IRI replacementUri) {
 		if (toBeReplacedUri == null) return v;
 		if (v.equals(toBeReplacedUri)) {
 			return replacementUri;
