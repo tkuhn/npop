@@ -9,22 +9,13 @@ public class MetaboliteSpeciesTopics implements TopicHandler {
 
 	@Override
 	public String getTopic(Nanopub np) {
-		return getPart1a(np) + ">" + getPart1b(np) + ">" + getPart2(np);
+		return getPart1(np) + ">" + ">" + getPart2(np);
 	}
 
-	private String getPart1a(Nanopub np) {
+	private String getPart1(Nanopub np) {
 		for (Statement st : np.getAssertion()) {
 			if (st.getPredicate().stringValue().equals("http://www.wikidata.org/prop/direct/P703")) {
 				return st.getSubject().stringValue() + ">" + st.getObject().stringValue();
-			}
-		}
-		return null;
-	}
-
-	private String getPart1b(Nanopub np) {
-		for (Statement st : np.getAssertion()) {
-			if (st.getPredicate().stringValue().equals("http://semanticscience.org/resource/CHEMINF_000399")) {
-				return st.getObject().stringValue();
 			}
 		}
 		return null;
