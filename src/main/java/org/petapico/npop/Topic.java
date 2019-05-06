@@ -84,7 +84,7 @@ public class Topic {
 				detectorClassName = "org.petapico.npop.topic." + handlerClass;
 			}
 			try {
-				topicHandler = (TopicHandler) Class.forName(detectorClassName).newInstance();
+				topicHandler = (TopicHandler) Class.forName(detectorClassName).getConstructor().newInstance();
 			} catch (ReflectiveOperationException ex) {
 				throw new RuntimeException(ex);
 			}

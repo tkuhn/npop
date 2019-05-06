@@ -16,6 +16,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
@@ -368,8 +369,17 @@ public class Reuse {
 		}
 
 		@Override
+		public void handleStatement(Statement st) throws RDFHandlerException {
+			if (st.getSubject().equals(newNp.getUri()) && st.getPredicate().equals(Nanopub.SUPERSEDES)) {
+				// remove existing supersedes-triple
+				return;
+			}
+			super.handleStatement(st);
+		}
+
+		@Override
 		public void endRDF() throws RDFHandlerException {
-			handleStatement(SimpleValueFactory.getInstance().createStatement(
+			super.handleStatement(SimpleValueFactory.getInstance().createStatement(
 					newNp.getUri(), Nanopub.SUPERSEDES, oldUri, newNp.getPubinfoUri()));
 			super.endRDF();
 		}

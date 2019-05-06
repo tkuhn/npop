@@ -91,7 +91,7 @@ public class Fingerprint {
 				detectorClassName = "org.petapico.npop.fingerprint." + handlerClass;
 			}
 			try {
-				fingerprintHandler = (FingerprintHandler) Class.forName(detectorClassName).newInstance();
+				fingerprintHandler = (FingerprintHandler) Class.forName(detectorClassName).getConstructor().newInstance();
 			} catch (ReflectiveOperationException ex) {
 				throw new RuntimeException(ex);
 			}
